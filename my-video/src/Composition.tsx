@@ -1,25 +1,16 @@
-import { CalculateMetadataFunction, Composition } from "remotion";
-
-type Props = {};
-
-const calculateMetadata: CalculateMetadataFunction<Props> = () => {
-  return {};
-};
+import { Composition } from "remotion";
+import { FocacciaVideo } from "./FocacciaVideo";
+import { FPS, HEIGHT, totalDurationInFrames, WIDTH } from "./lib/scenes";
 
 export const MyComposition = () => {
   return (
     <Composition
-      id="MyComp"
-      component={MyComponent}
-      durationInFrames={60}
-      fps={30}
-      width={1280}
-      height={720}
-      calculateMetadata={calculateMetadata}
+      id="FocacciaBarese"
+      component={FocacciaVideo}
+      durationInFrames={totalDurationInFrames()}
+      fps={FPS}
+      width={WIDTH}
+      height={HEIGHT}
     />
   );
-};
-
-export const MyComponent: React.FC<Props> = () => {
-  return null;
 };

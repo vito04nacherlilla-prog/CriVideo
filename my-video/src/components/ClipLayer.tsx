@@ -1,24 +1,36 @@
-import { AbsoluteFill, OffthreadVideo, staticFile } from "remotion";
+import { AbsoluteFill, Loop, OffthreadVideo, staticFile, useVideoConfig } from "remotion";
 import { COLORS, FONTS } from "../lib/theme";
 
-// Mostra la clip video se `src` è definito, altrimenti un placeholder colorato
-// con il nome della scena, così la struttura è visibile prima di avere i video.
+// Mostra la clip video se `src` è definito, altrimenti un placeholder colorato.
+// Se `clipDurationInSeconds` è indicato (e non si usa startFrom), la clip viene
+// messa in loop: utile quando la clip è più corta della scena.
 export const ClipLayer: React.FC<{
   src?: string;
   startFrom?: number;
+  clipDurationInSeconds?: number;
   label?: string;
-}> = ({ src, startFrom, label }) => {
+}> = ({ src, startFrom, clipDurationInSeconds, label }) => {
+  const { fps } = useVideoConfig();
+
   if (src) {
-    return (
-      <AbsoluteFill>
-        <OffthreadVideo
-          src={staticFile(src)}
-          startFrom={startFrom}
-          muted
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
-      </AbsoluteFill>
+    const video = (
+      <OffthreadVideo
+        src={staticFile(src)}
+        startFrom={startFrom}
+        muted
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+      />
     );
+    if (clipDurationInSeconds && !startFrom) {
+      return (
+        <AbsoluteFill>
+          <Loop durationInFrames={Math.round(clipDurationInSeconds * fps)}>
+            {video}
+          </Loop>
+        </AbsoluteFill>
+      );
+    }
+    return <AbsoluteFill>{video}</AbsoluteFill>;
   }
 
   return (

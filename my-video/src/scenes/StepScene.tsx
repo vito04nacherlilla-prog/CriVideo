@@ -6,7 +6,16 @@ import { BigTitle, Kicker, Rise, Scrim, Subtitle, TipCard } from "../components/
 export const StepScene: React.FC<{ scene: Scene }> = ({ scene }) => {
   return (
     <AbsoluteFill>
-      <ClipLayer src={scene.src} startFrom={scene.clipStartInSeconds ? Math.round(scene.clipStartInSeconds * 30) : undefined} label={scene.id} />
+      <ClipLayer
+        src={scene.src}
+        startFrom={
+          scene.clipStartInSeconds
+            ? Math.round(scene.clipStartInSeconds * 30)
+            : undefined
+        }
+        clipDurationInSeconds={scene.clipDurationInSeconds}
+        label={scene.id}
+      />
       <Scrim />
       <AbsoluteFill
         style={{

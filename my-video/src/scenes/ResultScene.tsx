@@ -9,7 +9,11 @@ export const ResultScene: React.FC<{ scene: Scene }> = ({ scene }) => {
   return (
     <AbsoluteFill>
       <div style={{ transform: `scale(${scale})`, width: "100%", height: "100%" }}>
-        <ClipLayer src={scene.src} label={scene.id} />
+        <ClipLayer
+          src={scene.src}
+          clipDurationInSeconds={scene.clipDurationInSeconds}
+          label={scene.id}
+        />
       </div>
       <Scrim strength={1.1} />
       <AbsoluteFill

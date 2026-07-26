@@ -7,7 +7,11 @@ import { COLORS } from "../lib/theme";
 export const OutroScene: React.FC<{ scene: Scene }> = ({ scene }) => {
   return (
     <AbsoluteFill style={{ background: COLORS.terracottaScura }}>
-      <ClipLayer src={scene.src} label={scene.id} />
+      <ClipLayer
+        src={scene.src}
+        clipDurationInSeconds={scene.clipDurationInSeconds}
+        label={scene.id}
+      />
       <AbsoluteFill
         style={{
           background: `radial-gradient(circle at center, rgba(0,0,0,0.15), rgba(0,0,0,0.78))`,

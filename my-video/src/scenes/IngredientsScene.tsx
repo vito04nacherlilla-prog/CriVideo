@@ -7,7 +7,11 @@ import { COLORS, FONTS, SHADOW } from "../lib/theme";
 export const IngredientsScene: React.FC<{ scene: Scene }> = ({ scene }) => {
   return (
     <AbsoluteFill>
-      <ClipLayer src={scene.src} label={scene.id} />
+      <ClipLayer
+        src={scene.src}
+        clipDurationInSeconds={scene.clipDurationInSeconds}
+        label={scene.id}
+      />
       <Scrim strength={1.3} />
       <AbsoluteFill
         style={{ justifyContent: "center", alignItems: "center", padding: 70 }}

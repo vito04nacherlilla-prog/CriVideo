@@ -1,13 +1,18 @@
 // ============================================================================
 // STORYBOARD — La vera Focaccia Barese (Reel verticale 9:16)
 // ----------------------------------------------------------------------------
-// Tutto il video è guidato da questi dati. Per montare il video vero:
-//   1. Metti le clip del tuo amico in  public/videos/
-//   2. In ogni scena, imposta  src: "videos/nome-file.mp4"
-//      (finché src è undefined viene mostrato un placeholder colorato)
-//   3. Regola durationInSeconds / testi / trucchi come vuoi
-// L'ordine dell'array = l'ordine nel video. Aggiungere o togliere scene è
-// sufficiente: durata totale e barra di avanzamento si ricalcolano da sole.
+// Montaggio basato sulle clip reali girate in cucina (chef professionista).
+// Tutto il video è guidato da questi dati:
+//   - L'ordine dell'array SCENES = l'ordine nel video.
+//   - `src` punta a un file in public/videos (già convertiti in MP4 verticale).
+//   - Durata totale e barra di avanzamento si ricalcolano da sole.
+//
+// CLIP DISPONIBILI in public/videos (oltre a quelle usate qui sotto, restano
+// pronte come alternative da agganciare quando vuoi):
+//   impasto-acqua, impasto-mix, impasto-slurry, impasto-farina1, impasto-farina2,
+//   impasto-semola, impasto-olio, impasto-lavora, impasto-liscio, impasto-banco,
+//   panetti, stesura, stesura-dita, pomodorini, olive, teglie, olio,
+//   beauty-cruda, forno, hero-morso, hero-finale
 // ============================================================================
 
 export const FPS = 30;
@@ -24,12 +29,14 @@ export type SceneKind =
 export type Scene = {
   id: string;
   kind: SceneKind;
-  /** File in public/videos, es. "videos/impasto.mp4". Se assente → placeholder. */
+  /** File in public/videos, es. "videos/stesura.mp4". Se assente → placeholder. */
   src?: string;
   durationInSeconds: number;
   /** Punto di start della clip in secondi (per tagliare l'inizio). */
   clipStartInSeconds?: number;
-  /** Etichetta piccola in alto, es. "STEP 1 / 6". */
+  /** Durata reale della clip: se indicata e la scena è più lunga, va in loop. */
+  clipDurationInSeconds?: number;
+  /** Etichetta piccola in alto, es. "L'IMPASTO". */
   kicker?: string;
   /** Titolo grande della scena. */
   title?: string;
@@ -42,22 +49,23 @@ export type Scene = {
 };
 
 export const SCENES: Scene[] = [
-  // ---- 0. HOOK (primi 3 secondi: devono inchiodare lo spettatore) ----------
+  // ---- 0. HOOK — lo chef che morde la focaccia (primi 3 secondi) -----------
   {
     id: "hook",
     kind: "hook",
-    src: undefined, // → metti qui la clip più bella: il morso croccante o la teglia appena sfornata
+    src: "videos/hero-morso.mp4",
     durationInSeconds: 3,
-    title: "LA VERA\nFOCACCIA BARESE",
-    subtitle: "quella che non compri, la fai",
+    title: "LA VERA\nFOCACCIA\nBARESE",
+    subtitle: "quella dei fornai, fatta in casa",
   },
 
-  // ---- 1. INGREDIENTI ------------------------------------------------------
+  // ---- 1. INGREDIENTI (macro della focaccia condita cruda) -----------------
   {
     id: "ingredienti",
     kind: "ingredients",
-    src: undefined,
-    durationInSeconds: 6,
+    src: "videos/beauty-cruda.mp4",
+    clipDurationInSeconds: 3,
+    durationInSeconds: 5,
     kicker: "GLI INGREDIENTI",
     title: "Ti serve solo questo",
     list: [
@@ -66,110 +74,154 @@ export const SCENES: Scene[] = [
       { label: "Patata lessa", value: "1 media" },
       { label: "Acqua tiepida", value: "400 ml" },
       { label: "Lievito di birra", value: "7 g" },
-      { label: "Olio EVO + sale grosso", value: "q.b." },
-      { label: "Pomodorini + olive baresane", value: "q.b." },
+      { label: "Olio EVO + sale", value: "q.b." },
+      { label: "Pomodorini + olive", value: "q.b." },
     ],
   },
 
-  // ---- 2. STEP 1 — IMPASTO -------------------------------------------------
+  // ---- 2. IMPASTO — olio nell'impasto --------------------------------------
   {
-    id: "impasto",
+    id: "impasto-olio",
     kind: "step",
-    src: undefined, // videos/impasto.mp4
-    durationInSeconds: 5,
-    kicker: "STEP 1",
-    title: "L'impasto",
-    subtitle: "Semola + farina 0 + patata schiacciata",
-    tip: "La patata lessa è il segreto: rende la mollica soffice per giorni.",
+    src: "videos/impasto-olio.mp4",
+    durationInSeconds: 3.5,
+    kicker: "L'IMPASTO",
+    title: "Si parte da qui",
+    subtitle: "Acqua, lievito, olio e le farine",
+    tip: "La patata lessa nell'impasto è il segreto: mollica soffice per giorni.",
   },
 
-  // ---- 3. STEP 2 — IDRATAZIONE ---------------------------------------------
+  // ---- 3. IMPASTO — lavorazione --------------------------------------------
   {
-    id: "idratazione",
+    id: "impasto-lavora",
     kind: "step",
-    src: undefined,
-    durationInSeconds: 5,
-    kicker: "STEP 2",
+    src: "videos/impasto-lavora.mp4",
+    durationInSeconds: 3.5,
+    kicker: "L'IMPASTO",
     title: "Impasto molle",
-    subtitle: "Aggiungi l'acqua poco alla volta",
-    tip: "Alta idratazione (~80%): dev'essere appiccicoso, non tirarlo!",
+    subtitle: "Semola + farina 0, tanta acqua",
+    tip: "Alta idratazione (~80%): deve restare appiccicoso, non aggiungere farina!",
   },
 
-  // ---- 4. STEP 3 — LIEVITAZIONE --------------------------------------------
+  // ---- 4. IMPASTO — liscio ed elastico -------------------------------------
+  {
+    id: "impasto-liscio",
+    kind: "step",
+    src: "videos/impasto-liscio.mp4",
+    durationInSeconds: 3,
+    kicker: "L'IMPASTO",
+    title: "Liscio ed elastico",
+    subtitle: "Fino a che si stacca dalle pareti",
+  },
+
+  // ---- 5. IMPASTO — sul banco ----------------------------------------------
+  {
+    id: "impasto-banco",
+    kind: "step",
+    src: "videos/impasto-banco.mp4",
+    durationInSeconds: 2.8,
+    kicker: "L'IMPASTO",
+    title: "Si porziona",
+    subtitle: "Panetti da mettere in teglia",
+  },
+
+  // ---- 6. LIEVITAZIONE (panetti nelle teglie oliate) -----------------------
   {
     id: "lievitazione",
     kind: "step",
-    src: undefined,
-    durationInSeconds: 4,
-    kicker: "STEP 3",
-    title: "La lievitazione",
-    subtitle: "Copri e lascia raddoppiare",
-    tip: "2 ore al caldo. Niente fretta: qui nasce l'alveolatura.",
+    src: "videos/panetti.mp4",
+    durationInSeconds: 2,
+    kicker: "LA LIEVITAZIONE",
+    title: "Ora si aspetta",
+    subtitle: "Panetti in teglia ben oliata",
+    tip: "Lascia raddoppiare ~2 ore: qui nasce l'alveolatura.",
   },
 
-  // ---- 5. STEP 4 — STESURA IN TEGLIA ---------------------------------------
+  // ---- 7. STESURA in teglia ------------------------------------------------
   {
     id: "stesura",
     kind: "step",
-    src: undefined,
-    durationInSeconds: 5,
-    kicker: "STEP 4",
-    title: "In teglia",
-    subtitle: "Stendi con le dita, senza schiacciare",
-    tip: "Teglia unta d'olio abbondante: è ciò che frigge il fondo croccante.",
+    src: "videos/stesura.mp4",
+    durationInSeconds: 4.5,
+    kicker: "IN TEGLIA",
+    title: "Stendi con le dita",
+    subtitle: "Senza schiacciare, riempi la teglia",
+    tip: "Olio abbondante sul fondo: è ciò che frigge e rende la base croccante.",
   },
 
-  // ---- 6. STEP 5 — CONDIMENTO ----------------------------------------------
+  // ---- 8. STESURA — i buchi con le dita ------------------------------------
   {
-    id: "condimento",
+    id: "stesura-dita",
     kind: "step",
-    src: undefined,
-    durationInSeconds: 5,
-    kicker: "STEP 5",
-    title: "Pomodorini & olive",
-    subtitle: "Affonda pomodorini e olive baresane",
-    tip: "Schiaccia i pomodorini con la buccia: rilasciano più succo e sapore.",
+    src: "videos/stesura-dita.mp4",
+    durationInSeconds: 3,
+    kicker: "IN TEGLIA",
+    title: "I classici buchi",
+    subtitle: "Affonda i polpastrelli su tutta la superficie",
   },
 
-  // ---- 7. STEP 6 — EMULSIONE -----------------------------------------------
+  // ---- 9. CONDIMENTO — pomodorini ------------------------------------------
   {
-    id: "emulsione",
+    id: "pomodorini",
     kind: "step",
-    src: undefined,
-    durationInSeconds: 4,
-    kicker: "STEP 6",
-    title: "L'emulsione",
-    subtitle: "Acqua + olio + sale grosso in superficie",
-    tip: "Il trucco dei fornai: superficie lucida e croccante, cuore morbido.",
+    src: "videos/pomodorini.mp4",
+    durationInSeconds: 4.5,
+    kicker: "IL CONDIMENTO",
+    title: "Pomodorini",
+    subtitle: "Affondali bene nell'impasto",
+    tip: "Schiacciali con la buccia: rilasciano più succo e sapore in cottura.",
   },
 
-  // ---- 8. STEP 7 — COTTURA -------------------------------------------------
+  // ---- 10. CONDIMENTO — olive ----------------------------------------------
+  {
+    id: "olive",
+    kind: "step",
+    src: "videos/olive.mp4",
+    durationInSeconds: 3.5,
+    kicker: "IL CONDIMENTO",
+    title: "Olive baresane",
+    subtitle: "Con l'origano, quello vero",
+  },
+
+  // ---- 11. IL TOCCO — filo d'olio / emulsione ------------------------------
+  {
+    id: "olio",
+    kind: "step",
+    src: "videos/olio.mp4",
+    durationInSeconds: 3.5,
+    kicker: "IL TOCCO FINALE",
+    title: "Un giro d'olio",
+    subtitle: "Olio, un po' d'acqua e sale grosso",
+    tip: "L'emulsione acqua-olio-sale: superficie lucida e croccante, cuore morbido.",
+  },
+
+  // ---- 12. COTTURA ---------------------------------------------------------
   {
     id: "cottura",
     kind: "step",
-    src: undefined,
-    durationInSeconds: 5,
-    kicker: "STEP 7",
-    title: "In forno",
-    subtitle: "Forno bollente, parte bassa",
-    tip: "250°C statico: il colpo di calore dà la crosta dorata.",
+    src: "videos/forno.mp4",
+    durationInSeconds: 4,
+    kicker: "IN FORNO",
+    title: "Forno bollente",
+    subtitle: "Fino a doratura",
+    tip: "250°C: il colpo di calore dà la crosta dorata e i bordi croccanti.",
   },
 
-  // ---- 9. RISULTATO --------------------------------------------------------
+  // ---- 13. RISULTATO (4K, focaccia tagliata a spicchi) ---------------------
   {
     id: "risultato",
     kind: "result",
-    src: undefined, // videos/morso.mp4 — il morso croccante
+    src: "videos/hero-finale.mp4",
     durationInSeconds: 4,
     title: "Pronta.",
     subtitle: "Croccante fuori, morbida dentro.",
   },
 
-  // ---- 10. OUTRO / CTA -----------------------------------------------------
+  // ---- 14. OUTRO / CTA -----------------------------------------------------
   {
     id: "outro",
     kind: "outro",
-    src: undefined,
+    src: "videos/teglie.mp4",
     durationInSeconds: 3,
     title: "Salva la ricetta",
     subtitle: "Segui per la vera cucina pugliese 🫒",

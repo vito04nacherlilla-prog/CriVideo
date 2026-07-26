@@ -22,6 +22,11 @@ export const ResultScene: React.FC<{ scene: Scene }> = ({ scene }) => {
         }}
       >
         <Fade>
+          {scene.emoji ? (
+            <div style={{ fontSize: 72, lineHeight: 1, marginBottom: 8 }}>
+              {scene.emoji}
+            </div>
+          ) : null}
           {scene.title ? (
             <Title size={112} align="center">
               {scene.title}

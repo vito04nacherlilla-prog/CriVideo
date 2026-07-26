@@ -1,6 +1,6 @@
 // ============================================================================
 // STORYBOARD — La vera Focaccia Barese (Reel verticale 9:16)
-// Stile: video food professionale da TikTok. Stacchi netti, testo pulito.
+// Stile: video food professionale da TikTok. Stacchi netti, didascalie ricche.
 // ----------------------------------------------------------------------------
 // Ricetta reale (dall'audio dello chef):
 //   Impasto: 500 g acqua · 25 g lievito · 10 g zucchero · 100 g olio EVO ·
@@ -20,9 +20,12 @@ export type Scene = {
   id: string;
   kind: SceneKind;
   src?: string;
+  /** Sfondo immagine fissa (in public), alternativo alla clip video. */
+  bgImage?: string;
   durationInSeconds: number;
   clipDurationInSeconds?: number;
   clipStartInSeconds?: number;
+  emoji?: string;
   title?: string;
   subtitle?: string;
   list?: { label: string; value?: string }[];
@@ -30,7 +33,7 @@ export type Scene = {
 };
 
 export const SCENES: Scene[] = [
-  // 0. HOOK — lo chef che morde --------------------------------------------
+  // 0. HOOK -----------------------------------------------------------------
   {
     id: "hook",
     kind: "hook",
@@ -38,16 +41,16 @@ export const SCENES: Scene[] = [
     clipDurationInSeconds: 5.1,
     durationInSeconds: 3.2,
     title: "FOCACCIA\nBARESE",
-    subtitle: "la ricetta vera",
+    subtitle: "la ricetta vera dei fornai",
   },
 
-  // 1. INGREDIENTI ----------------------------------------------------------
+  // 1. INGREDIENTI (sfondo immagine fissa, niente loop/judder) --------------
   {
     id: "ingredienti",
     kind: "ingredients",
-    src: "videos/beauty-cruda.mp4",
-    clipDurationInSeconds: 3.0,
-    durationInSeconds: 6.5,
+    bgImage: "images/ricetta-bg.jpg",
+    durationInSeconds: 7,
+    emoji: "📝",
     title: "Ingredienti",
     list: [
       { label: "Acqua", value: "500 g" },
@@ -61,14 +64,16 @@ export const SCENES: Scene[] = [
     listFooter: "+ pomodoro a grappolo · olive · origano",
   },
 
-  // 2. IMPASTO — liquidi ----------------------------------------------------
+  // 2. IMPASTO — acqua, lievito, zucchero -----------------------------------
   {
     id: "impasto-1",
     kind: "step",
     src: "videos/impasto-slurry.mp4",
     clipDurationInSeconds: 4.0,
-    durationInSeconds: 4,
-    title: "Acqua, lievito e zucchero",
+    durationInSeconds: 4.5,
+    emoji: "💧",
+    title: "Acqua, lievito, zucchero",
+    subtitle: "nella planetaria",
   },
 
   // 3. IMPASTO — olio -------------------------------------------------------
@@ -77,8 +82,10 @@ export const SCENES: Scene[] = [
     kind: "step",
     src: "videos/impasto-olio.mp4",
     clipDurationInSeconds: 3.5,
-    durationInSeconds: 3.5,
+    durationInSeconds: 4,
+    emoji: "🫒",
     title: "Poi l'olio EVO",
+    subtitle: "100 g",
   },
 
   // 4. IMPASTO — farine -----------------------------------------------------
@@ -87,7 +94,8 @@ export const SCENES: Scene[] = [
     kind: "step",
     src: "videos/impasto-semola.mp4",
     clipDurationInSeconds: 4.0,
-    durationInSeconds: 4,
+    durationInSeconds: 4.5,
+    emoji: "🌾",
     title: "Farina 0 e semola",
     subtitle: "400 g + 550 g",
   },
@@ -98,9 +106,10 @@ export const SCENES: Scene[] = [
     kind: "step",
     src: "videos/impasto-lavora.mp4",
     clipDurationInSeconds: 4.0,
-    durationInSeconds: 4,
+    durationInSeconds: 4.5,
+    emoji: "🧂",
     title: "Il sale",
-    subtitle: "quando è ancora grezzo",
+    subtitle: "30 g, a impasto grezzo",
   },
 
   // 6. IMPASTO — liscio -----------------------------------------------------
@@ -109,8 +118,10 @@ export const SCENES: Scene[] = [
     kind: "step",
     src: "videos/impasto-liscio.mp4",
     clipDurationInSeconds: 4.0,
-    durationInSeconds: 3.2,
-    title: "Impasta fino a così",
+    durationInSeconds: 3.5,
+    emoji: "👐",
+    title: "Impasta",
+    subtitle: "fino a che è liscio",
   },
 
   // 7. PANETTI --------------------------------------------------------------
@@ -119,8 +130,10 @@ export const SCENES: Scene[] = [
     kind: "step",
     src: "videos/impasto-banco.mp4",
     clipDurationInSeconds: 2.85,
-    durationInSeconds: 3.5,
+    durationInSeconds: 3.8,
+    emoji: "🤲",
     title: "Panetti da 350 g",
+    subtitle: "sul banco",
   },
 
   // 8. IN TEGLIA ------------------------------------------------------------
@@ -129,8 +142,10 @@ export const SCENES: Scene[] = [
     kind: "step",
     src: "videos/panetti.mp4",
     clipDurationInSeconds: 2.1,
-    durationInSeconds: 3.5,
-    title: "In teglia, tanto olio",
+    durationInSeconds: 3.8,
+    emoji: "🫗",
+    title: "In teglia",
+    subtitle: "con tanto olio sotto",
   },
 
   // 9. STESURA --------------------------------------------------------------
@@ -140,7 +155,9 @@ export const SCENES: Scene[] = [
     src: "videos/stesura.mp4",
     clipDurationInSeconds: 6.2,
     durationInSeconds: 4,
+    emoji: "👐",
     title: "Stendi con le dita",
+    subtitle: "senza schiacciare",
   },
 
   // 10. STESURA — buchi -----------------------------------------------------
@@ -149,8 +166,10 @@ export const SCENES: Scene[] = [
     kind: "step",
     src: "videos/stesura-dita.mp4",
     clipDurationInSeconds: 3.0,
-    durationInSeconds: 3.2,
+    durationInSeconds: 3.5,
+    emoji: "👇",
     title: "I classici buchi",
+    subtitle: "su tutta la superficie",
   },
 
   // 11. CONDIMENTO — pomodoro -----------------------------------------------
@@ -160,8 +179,9 @@ export const SCENES: Scene[] = [
     src: "videos/pomodorini.mp4",
     clipDurationInSeconds: 6.3,
     durationInSeconds: 4,
+    emoji: "🍅",
     title: "Pomodoro a grappolo",
-    subtitle: "a pezzettini",
+    subtitle: "tagliato a pezzettini",
   },
 
   // 12. CONDIMENTO — olive --------------------------------------------------
@@ -170,8 +190,10 @@ export const SCENES: Scene[] = [
     kind: "step",
     src: "videos/olive.mp4",
     clipDurationInSeconds: 5.6,
-    durationInSeconds: 3.8,
-    title: "Olive, origano e sale",
+    durationInSeconds: 4,
+    emoji: "🫒",
+    title: "Olive e origano",
+    subtitle: "e un pizzico di sale",
   },
 
   // 13. CONDIMENTO — olio ---------------------------------------------------
@@ -181,7 +203,9 @@ export const SCENES: Scene[] = [
     src: "videos/olio.mp4",
     clipDurationInSeconds: 3.6,
     durationInSeconds: 3.5,
+    emoji: "🫗",
     title: "Un giro d'olio",
+    subtitle: "generoso, in superficie",
   },
 
   // 14. LIEVITAZIONE --------------------------------------------------------
@@ -191,7 +215,9 @@ export const SCENES: Scene[] = [
     src: "videos/teglie.mp4",
     clipDurationInSeconds: 3.9,
     durationInSeconds: 3.5,
+    emoji: "⏳",
     title: "Lievita 1 ora",
+    subtitle: "coperta, al caldo",
   },
 
   // 15. FORNO ---------------------------------------------------------------
@@ -201,16 +227,19 @@ export const SCENES: Scene[] = [
     src: "videos/forno.mp4",
     clipDurationInSeconds: 4.05,
     durationInSeconds: 4,
-    title: "Forno 220°C · 15 min",
+    emoji: "🔥",
+    title: "Forno 220°C",
+    subtitle: "per 15 minuti",
   },
 
-  // 16. RISULTATO / CHIUSURA (clip diversa dall'intro) ----------------------
+  // 16. RISULTATO / CHIUSURA ------------------------------------------------
   {
     id: "risultato",
     kind: "result",
     src: "videos/hero-finale.mp4",
     clipDurationInSeconds: 4.4,
     durationInSeconds: 4.5,
+    emoji: "😋",
     title: "Buon appetito",
     subtitle: "salva la ricetta 🫒",
   },

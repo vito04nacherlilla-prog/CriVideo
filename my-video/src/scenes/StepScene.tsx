@@ -1,7 +1,7 @@
 import { AbsoluteFill } from "remotion";
 import { FPS, Scene } from "../lib/scenes";
 import { ClipLayer } from "../components/ClipLayer";
-import { Fade, Grade, Subtitle, Title } from "../components/Overlays";
+import { Caption, Grade } from "../components/Overlays";
 
 export const StepScene: React.FC<{ scene: Scene }> = ({ scene }) => {
   return (
@@ -22,14 +22,15 @@ export const StepScene: React.FC<{ scene: Scene }> = ({ scene }) => {
         style={{
           justifyContent: "flex-end",
           alignItems: "flex-start",
-          padding: 64,
-          paddingBottom: 120,
+          padding: 56,
+          paddingBottom: 128,
         }}
       >
-        <Fade>
-          {scene.title ? <Title size={72}>{scene.title}</Title> : null}
-          {scene.subtitle ? <Subtitle>{scene.subtitle}</Subtitle> : null}
-        </Fade>
+        <Caption
+          emoji={scene.emoji}
+          title={scene.title}
+          subtitle={scene.subtitle}
+        />
       </AbsoluteFill>
     </AbsoluteFill>
   );

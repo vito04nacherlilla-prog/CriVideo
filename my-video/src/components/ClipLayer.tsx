@@ -31,8 +31,8 @@ export const ClipLayer: React.FC<{
   // Direzione dello zoom alternata in modo deterministico dalla sorgente.
   const zoomIn = (src?.length ?? 0) % 2 === 0;
   const scale = zoomIn
-    ? interpolate(p, [0, 1], [1.05, 1.18])
-    : interpolate(p, [0, 1], [1.18, 1.05]);
+    ? interpolate(p, [0, 1], [1.02, 1.09])
+    : interpolate(p, [0, 1], [1.09, 1.02]);
 
   if (!src) {
     return (

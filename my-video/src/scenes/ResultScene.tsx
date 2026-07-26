@@ -1,16 +1,9 @@
-import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill } from "remotion";
 import { Scene } from "../lib/scenes";
 import { ClipLayer } from "../components/ClipLayer";
-import { Grade, KineticTitle, Rise, SegmentedProgress, Subtitle } from "../components/Overlays";
+import { Fade, Grade, Subtitle, Title } from "../components/Overlays";
 
-export const ResultScene: React.FC<{
-  scene: Scene;
-  index: number;
-  count: number;
-}> = ({ scene, index, count }) => {
-  const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
-
+export const ResultScene: React.FC<{ scene: Scene }> = ({ scene }) => {
   return (
     <AbsoluteFill>
       <ClipLayer
@@ -26,23 +19,21 @@ export const ResultScene: React.FC<{
           alignItems: "center",
           textAlign: "center",
           padding: 60,
-          gap: 4,
         }}
       >
-        {scene.title ? (
-          <KineticTitle size={150} align="center">
-            {scene.title}
-          </KineticTitle>
-        ) : null}
-        <Rise delay={10}>
-          {scene.subtitle ? <Subtitle align="center">{scene.subtitle}</Subtitle> : null}
-        </Rise>
+        <Fade>
+          {scene.title ? (
+            <Title size={112} align="center">
+              {scene.title}
+            </Title>
+          ) : null}
+          {scene.subtitle ? (
+            <Subtitle align="center" size={40}>
+              {scene.subtitle}
+            </Subtitle>
+          ) : null}
+        </Fade>
       </AbsoluteFill>
-      <SegmentedProgress
-        count={count}
-        index={index}
-        sceneProgress={frame / durationInFrames}
-      />
     </AbsoluteFill>
   );
 };

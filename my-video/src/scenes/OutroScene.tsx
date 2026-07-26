@@ -1,23 +1,30 @@
-import { AbsoluteFill } from "remotion";
-import { Scene } from "../lib/scenes";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
+import { FPS, Scene } from "../lib/scenes";
 import { ClipLayer } from "../components/ClipLayer";
-import { BigTitle, Rise, Scrim, Subtitle } from "../components/Overlays";
-import { COLORS } from "../lib/theme";
+import { Grade, KineticTitle, Rise, SegmentedProgress, Subtitle } from "../components/Overlays";
 
-export const OutroScene: React.FC<{ scene: Scene }> = ({ scene }) => {
+export const OutroScene: React.FC<{
+  scene: Scene;
+  index: number;
+  count: number;
+}> = ({ scene, index, count }) => {
+  const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
+
   return (
-    <AbsoluteFill style={{ background: COLORS.terracottaScura }}>
+    <AbsoluteFill>
       <ClipLayer
         src={scene.src}
         clipDurationInSeconds={scene.clipDurationInSeconds}
+        sceneDurationInSeconds={scene.durationInSeconds}
+        startFrom={
+          scene.clipStartInSeconds
+            ? Math.round(scene.clipStartInSeconds * FPS)
+            : undefined
+        }
         label={scene.id}
       />
-      <AbsoluteFill
-        style={{
-          background: `radial-gradient(circle at center, rgba(0,0,0,0.15), rgba(0,0,0,0.78))`,
-        }}
-      />
-      <Scrim strength={0.6} />
+      <Grade scrim="center" />
       <AbsoluteFill
         style={{
           justifyContent: "center",
@@ -27,11 +34,20 @@ export const OutroScene: React.FC<{ scene: Scene }> = ({ scene }) => {
           gap: 6,
         }}
       >
-        <Rise>{scene.title ? <BigTitle size={104}>{scene.title}</BigTitle> : null}</Rise>
-        <Rise delay={8}>
-          {scene.subtitle ? <Subtitle>{scene.subtitle}</Subtitle> : null}
+        {scene.title ? (
+          <KineticTitle size={104} align="center">
+            {scene.title}
+          </KineticTitle>
+        ) : null}
+        <Rise delay={12}>
+          {scene.subtitle ? <Subtitle align="center">{scene.subtitle}</Subtitle> : null}
         </Rise>
       </AbsoluteFill>
+      <SegmentedProgress
+        count={count}
+        index={index}
+        sceneProgress={frame / durationInFrames}
+      />
     </AbsoluteFill>
   );
 };

@@ -1,35 +1,56 @@
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { Scene } from "../lib/scenes";
 import { ClipLayer } from "../components/ClipLayer";
-import { BigTitle, Rise, Scrim, Subtitle } from "../components/Overlays";
+import {
+  Grade,
+  KineticTitle,
+  Rise,
+  SegmentedProgress,
+  Subtitle,
+} from "../components/Overlays";
 
-export const HookScene: React.FC<{ scene: Scene }> = ({ scene }) => {
+export const HookScene: React.FC<{
+  scene: Scene;
+  index: number;
+  count: number;
+}> = ({ scene, index, count }) => {
   const frame = useCurrentFrame();
-  // Leggero zoom-in per dare energia al primo secondo.
-  const scale = interpolate(frame, [0, 90], [1.08, 1.16]);
+  const { durationInFrames } = useVideoConfig();
+
   return (
     <AbsoluteFill>
-      <div style={{ transform: `scale(${scale})`, width: "100%", height: "100%" }}>
-        <ClipLayer
-          src={scene.src}
-          clipDurationInSeconds={scene.clipDurationInSeconds}
-          label={scene.id}
-        />
-      </div>
-      <Scrim strength={1.15} />
+      <ClipLayer
+        src={scene.src}
+        clipDurationInSeconds={scene.clipDurationInSeconds}
+        sceneDurationInSeconds={scene.durationInSeconds}
+        label={scene.id}
+      />
+      <Grade scrim="center" />
       <AbsoluteFill
         style={{
           justifyContent: "center",
           alignItems: "center",
           textAlign: "center",
           padding: 60,
+          gap: 6,
         }}
       >
-        <Rise>{scene.title ? <BigTitle size={128}>{scene.title}</BigTitle> : null}</Rise>
-        <Rise delay={10}>
-          {scene.subtitle ? <Subtitle>{scene.subtitle}</Subtitle> : null}
+        {scene.title ? (
+          <KineticTitle size={132} align="center">
+            {scene.title}
+          </KineticTitle>
+        ) : null}
+        <Rise delay={12}>
+          {scene.subtitle ? (
+            <Subtitle align="center">{scene.subtitle}</Subtitle>
+          ) : null}
         </Rise>
       </AbsoluteFill>
+      <SegmentedProgress
+        count={count}
+        index={index}
+        sceneProgress={frame / durationInFrames}
+      />
     </AbsoluteFill>
   );
 };

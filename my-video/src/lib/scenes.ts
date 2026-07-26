@@ -1,6 +1,7 @@
 // ============================================================================
 // STORYBOARD — La vera Focaccia Barese (Reel verticale 9:16)
-// Stile: video food professionale da TikTok. Stacchi netti, didascalie ricche.
+// Stile: video food professionale da TikTok. Didascalie ricche + emoji.
+// Stacchi ammorbiditi da una micro-dissolvenza (niente tagli netti).
 // ----------------------------------------------------------------------------
 // Ricetta reale (dall'audio dello chef):
 //   Impasto: 500 g acqua · 25 g lievito · 10 g zucchero · 100 g olio EVO ·
@@ -13,6 +14,7 @@
 export const FPS = 30;
 export const WIDTH = 1080;
 export const HEIGHT = 1920;
+export const TRANSITION_FRAMES = 8; // micro-dissolvenza tra le scene (~0,27s)
 
 export type SceneKind = "hook" | "ingredients" | "step" | "result";
 
@@ -20,7 +22,6 @@ export type Scene = {
   id: string;
   kind: SceneKind;
   src?: string;
-  /** Sfondo immagine fissa (in public), alternativo alla clip video. */
   bgImage?: string;
   durationInSeconds: number;
   clipDurationInSeconds?: number;
@@ -44,7 +45,7 @@ export const SCENES: Scene[] = [
     subtitle: "la ricetta vera dei fornai",
   },
 
-  // 1. INGREDIENTI (sfondo immagine fissa, niente loop/judder) --------------
+  // 1. INGREDIENTI (sfondo immagine fissa) ----------------------------------
   {
     id: "ingredienti",
     kind: "ingredients",
@@ -64,55 +65,79 @@ export const SCENES: Scene[] = [
     listFooter: "+ pomodoro a grappolo · olive · origano",
   },
 
-  // 2. IMPASTO — acqua, lievito, zucchero -----------------------------------
+  // 2. IMPASTO — acqua ------------------------------------------------------
   {
-    id: "impasto-1",
+    id: "impasto-acqua",
+    kind: "step",
+    src: "videos/impasto-acqua.mp4",
+    clipDurationInSeconds: 4.0,
+    durationInSeconds: 3.5,
+    emoji: "💧",
+    title: "L'acqua",
+    subtitle: "500 g nella planetaria",
+  },
+
+  // 3. IMPASTO — lievito e zucchero -----------------------------------------
+  {
+    id: "impasto-lievito",
     kind: "step",
     src: "videos/impasto-slurry.mp4",
     clipDurationInSeconds: 4.0,
-    durationInSeconds: 4.5,
-    emoji: "💧",
-    title: "Acqua, lievito, zucchero",
-    subtitle: "nella planetaria",
+    durationInSeconds: 3.5,
+    emoji: "🫧",
+    title: "Lievito e zucchero",
+    subtitle: "25 g + 10 g",
   },
 
-  // 3. IMPASTO — olio -------------------------------------------------------
+  // 4. IMPASTO — olio -------------------------------------------------------
   {
     id: "impasto-olio",
     kind: "step",
     src: "videos/impasto-olio.mp4",
     clipDurationInSeconds: 3.5,
-    durationInSeconds: 4,
+    durationInSeconds: 3.5,
     emoji: "🫒",
-    title: "Poi l'olio EVO",
+    title: "L'olio EVO",
     subtitle: "100 g",
   },
 
-  // 4. IMPASTO — farine -----------------------------------------------------
+  // 5. IMPASTO — farina 0 ---------------------------------------------------
   {
-    id: "impasto-farine",
+    id: "impasto-farina",
+    kind: "step",
+    src: "videos/impasto-farina1.mp4",
+    clipDurationInSeconds: 4.5,
+    durationInSeconds: 3.5,
+    emoji: "🌾",
+    title: "Farina 0",
+    subtitle: "400 g",
+  },
+
+  // 6. IMPASTO — semola -----------------------------------------------------
+  {
+    id: "impasto-semola",
     kind: "step",
     src: "videos/impasto-semola.mp4",
     clipDurationInSeconds: 4.0,
-    durationInSeconds: 4.5,
+    durationInSeconds: 3.5,
     emoji: "🌾",
-    title: "Farina 0 e semola",
-    subtitle: "400 g + 550 g",
+    title: "Semola rimacinata",
+    subtitle: "550 g",
   },
 
-  // 5. IMPASTO — sale -------------------------------------------------------
+  // 7. IMPASTO — sale -------------------------------------------------------
   {
     id: "impasto-sale",
     kind: "step",
     src: "videos/impasto-lavora.mp4",
     clipDurationInSeconds: 4.0,
-    durationInSeconds: 4.5,
+    durationInSeconds: 4,
     emoji: "🧂",
     title: "Il sale",
     subtitle: "30 g, a impasto grezzo",
   },
 
-  // 6. IMPASTO — liscio -----------------------------------------------------
+  // 8. IMPASTO — liscio -----------------------------------------------------
   {
     id: "impasto-liscio",
     kind: "step",
@@ -124,7 +149,7 @@ export const SCENES: Scene[] = [
     subtitle: "fino a che è liscio",
   },
 
-  // 7. PANETTI --------------------------------------------------------------
+  // 9. PANETTI --------------------------------------------------------------
   {
     id: "panetti",
     kind: "step",
@@ -136,7 +161,7 @@ export const SCENES: Scene[] = [
     subtitle: "sul banco",
   },
 
-  // 8. IN TEGLIA ------------------------------------------------------------
+  // 10. IN TEGLIA -----------------------------------------------------------
   {
     id: "in-teglia",
     kind: "step",
@@ -148,7 +173,7 @@ export const SCENES: Scene[] = [
     subtitle: "con tanto olio sotto",
   },
 
-  // 9. STESURA --------------------------------------------------------------
+  // 11. STESURA -------------------------------------------------------------
   {
     id: "stesura",
     kind: "step",
@@ -160,7 +185,7 @@ export const SCENES: Scene[] = [
     subtitle: "senza schiacciare",
   },
 
-  // 10. STESURA — buchi -----------------------------------------------------
+  // 12. STESURA — buchi -----------------------------------------------------
   {
     id: "stesura-dita",
     kind: "step",
@@ -172,7 +197,7 @@ export const SCENES: Scene[] = [
     subtitle: "su tutta la superficie",
   },
 
-  // 11. CONDIMENTO — pomodoro -----------------------------------------------
+  // 13. CONDIMENTO — pomodoro -----------------------------------------------
   {
     id: "pomodoro",
     kind: "step",
@@ -184,7 +209,7 @@ export const SCENES: Scene[] = [
     subtitle: "tagliato a pezzettini",
   },
 
-  // 12. CONDIMENTO — olive --------------------------------------------------
+  // 14. CONDIMENTO — olive --------------------------------------------------
   {
     id: "olive",
     kind: "step",
@@ -196,7 +221,7 @@ export const SCENES: Scene[] = [
     subtitle: "e un pizzico di sale",
   },
 
-  // 13. CONDIMENTO — olio ---------------------------------------------------
+  // 15. CONDIMENTO — olio ---------------------------------------------------
   {
     id: "olio",
     kind: "step",
@@ -208,7 +233,7 @@ export const SCENES: Scene[] = [
     subtitle: "generoso, in superficie",
   },
 
-  // 14. LIEVITAZIONE --------------------------------------------------------
+  // 16. LIEVITAZIONE --------------------------------------------------------
   {
     id: "lievitazione",
     kind: "step",
@@ -220,7 +245,7 @@ export const SCENES: Scene[] = [
     subtitle: "coperta, al caldo",
   },
 
-  // 15. FORNO ---------------------------------------------------------------
+  // 17. FORNO ---------------------------------------------------------------
   {
     id: "forno",
     kind: "step",
@@ -232,7 +257,7 @@ export const SCENES: Scene[] = [
     subtitle: "per 15 minuti",
   },
 
-  // 16. RISULTATO / CHIUSURA ------------------------------------------------
+  // 18. RISULTATO / CHIUSURA ------------------------------------------------
   {
     id: "risultato",
     kind: "result",
@@ -245,6 +270,11 @@ export const SCENES: Scene[] = [
   },
 ];
 
-/** Durata totale in frame (stacchi netti: somma delle scene). */
-export const totalDurationInFrames = () =>
-  SCENES.reduce((acc, s) => acc + Math.round(s.durationInSeconds * FPS), 0);
+/** Durata totale in frame, tenendo conto delle micro-dissolvenze. */
+export const totalDurationInFrames = () => {
+  const sum = SCENES.reduce(
+    (acc, s) => acc + Math.round(s.durationInSeconds * FPS),
+    0,
+  );
+  return sum - (SCENES.length - 1) * TRANSITION_FRAMES;
+};

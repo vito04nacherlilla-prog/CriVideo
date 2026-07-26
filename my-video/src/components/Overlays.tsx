@@ -36,6 +36,19 @@ const useSpring = (delay: number, cfg?: object) => {
   return spring({ frame: frame - delay, fps, config: cfg ?? { damping: 200 } });
 };
 
+// Sfuma via la didascalia poco prima della fine della scena, così durante la
+// micro-dissolvenza le scritte non si accavallano.
+const useExit = () => {
+  const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
+  return interpolate(
+    frame,
+    [durationInFrames - 9, durationInFrames - 2],
+    [1, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+  );
+};
+
 // Entrata pulita: fade + salita.
 export const Fade: React.FC<{
   children: React.ReactNode;
@@ -43,11 +56,12 @@ export const Fade: React.FC<{
   distance?: number;
 }> = ({ children, delay = 0, distance = 26 }) => {
   const s = useSpring(delay, { damping: 200 });
+  const exit = useExit();
   return (
     <div
       style={{
         transform: `translateY(${interpolate(s, [0, 1], [distance, 0])}px)`,
-        opacity: s,
+        opacity: s * exit,
       }}
     >
       {children}
@@ -108,12 +122,13 @@ export const Caption: React.FC<{
   const card = useSpring(0, { damping: 18, stiffness: 120, mass: 0.7 });
   const titlePop = useSpring(3, { damping: 12, stiffness: 140, mass: 0.6 });
   const emojiPop = useSpring(1, { damping: 10, stiffness: 160, mass: 0.5 });
+  const exit = useExit();
 
   return (
     <div
       style={{
         transform: `translateY(${interpolate(card, [0, 1], [40, 0])}px)`,
-        opacity: card,
+        opacity: card * exit,
         display: "inline-flex",
         flexDirection: "column",
         maxWidth: 860,

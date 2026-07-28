@@ -5,6 +5,7 @@ import math, base64, os, html
 SCR = os.path.dirname(os.path.abspath(__file__))
 ANTON = base64.b64encode(open(os.path.join(SCR, "anton.woff2"), "rb").read()).decode()
 MONT  = base64.b64encode(open(os.path.join(SCR, "mont.woff2"), "rb").read()).decode()
+LOGO  = base64.b64encode(open(os.path.join(SCR, "logo-kreca.png"), "rb").read()).decode()
 
 # ---------------------------------------------------------------- blueprint motif
 def blueprint(seed_rot=0):
@@ -41,14 +42,9 @@ def blueprint(seed_rot=0):
 BP = blueprint()
 
 # ---------------------------------------------------------------- logo
-def logo(cls="logo"):
-    return (f'<span class="{cls}">'
-            '<svg class="mk" viewBox="0 0 48 48" aria-hidden="true">'
-            '<path d="M11 3 H46 L37 45 H2 Z" fill="var(--red)"/>'
-            '<g stroke="#fff" stroke-width="4.6" fill="none" stroke-linecap="butt">'
-            '<path d="M17 13 V35"/><path d="M17 25 L30 13"/><path d="M17 24 L32 35"/>'
-            '</g></svg>'
-            '<span class="wm"><b>KRECA</b><i>officina metalmeccanica</i></span></span>')
+def logo(cls=""):
+    return (f'<img class="logo-img {cls}" alt="KRECA — Officina Metalmeccanica" '
+            f'src="data:image/png;base64,{LOGO}">')
 
 # ---------------------------------------------------------------- helpers
 def prest(items):
@@ -344,12 +340,13 @@ BOOK = "\n".join(pages)
 # ================================================================ CSS
 CSS = """
 :root{
-  --ink:#0C0D10; --panel:#14161B; --panel-2:#1B1F27; --panel-3:#232833;
-  --red:#DA2128; --red-deep:#9E121A; --red-ink:#F04A50;
-  --steel:#A6AEBB; --steel-dim:#767E8C; --steel-fade:rgba(166,174,187,.16);
+  --ink:#08090B; --panel:#14161B; --panel-2:#1B1F27; --panel-3:#232833;
+  --red:#30D158; --red-deep:#1E9E43; --red-ink:#57DD78;   /* accent = brand green */
+  --fill1:#1E9E43; --fill2:#0C4A22;                        /* deep-green slash fill */
+  --steel:#8B929C; --steel-dim:#5A626E; --steel-fade:rgba(139,146,156,.16);
   --paper:#EEF1F4; --on-paper:#14161B;
   --white:#F3F5F8;
-  --line:rgba(166,174,187,.16); --line-strong:rgba(166,174,187,.34);
+  --line:rgba(139,146,156,.16); --line-strong:rgba(139,146,156,.32);
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -369,7 +366,7 @@ body{
   position:relative; overflow:hidden;
   width:min(820px,94vw); aspect-ratio:210/297;
   container-type:size;
-  background:linear-gradient(160deg,#14161b 0%,#0e1014 62%,#0b0c0f 100%);
+  background:linear-gradient(160deg,#14161B 0%,#0c0d11 62%,#08090B 100%);
   color:var(--white);
   box-shadow:0 40px 80px -30px rgba(0,0,0,.85), 0 2px 0 rgba(255,255,255,.03) inset;
   padding:9cqw 8.4cqw;
@@ -400,7 +397,7 @@ h1,h2,h3,.bignum,.htitle,.ptitle{
   text-transform:uppercase;line-height:.92;text-wrap:balance;
   letter-spacing:.005em;
 }
-.body{font-size:2.35cqw;line-height:1.62;color:#D5D9E0;font-weight:400}
+.body{font-size:2.35cqw;line-height:1.62;color:#C6CCD4;font-weight:400}
 .body p{margin:0 0 1.5cqw}
 .body strong{color:var(--white);font-weight:600}
 .body em{font-style:normal;color:var(--red-ink);font-weight:600}
@@ -421,9 +418,9 @@ h1,h2,h3,.bignum,.htitle,.ptitle{
 /* ---------------- COVER ---------------- */
 .cover{padding:0;justify-content:space-between}
 .cover-red{position:absolute;z-index:1;right:-14%;bottom:-16%;width:96%;height:80%;
-  background:linear-gradient(135deg,var(--red) 0%,var(--red-deep) 100%);
+  background:linear-gradient(135deg,var(--fill1) 0%,var(--fill2) 100%);
   transform:skewX(-14deg);transform-origin:bottom right;
-  box-shadow:-20px 0 60px -20px rgba(218,33,40,.5)}
+  box-shadow:-20px 0 60px -20px rgba(30,158,67,.45)}
 .bpwrap{position:absolute;color:#fff;opacity:.16;pointer-events:none}
 .cover-red .bpwrap{right:6%;bottom:8%;width:62cqw;transform:skewX(14deg)}
 .bp{width:100%;height:auto;display:block}
@@ -449,13 +446,8 @@ h1,h2,h3,.bignum,.htitle,.ptitle{
 .cf.web .cfv{color:var(--red-ink)}
 
 /* ---------------- LOGO ---------------- */
-.logo{display:inline-flex;align-items:center;gap:2cqw}
-.logo .mk{width:6.4cqw;height:6.4cqw;flex:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
-.logo .wm{display:flex;flex-direction:column;line-height:1}
-.logo .wm b{font-family:"Anton",sans-serif;font-weight:400;font-size:5cqw;
-  letter-spacing:.14em;color:var(--white)}
-.logo .wm i{font-style:normal;font-family:"Mont";font-weight:600;font-size:1.4cqw;
-  letter-spacing:.34em;text-transform:uppercase;color:var(--steel);margin-top:.5cqw}
+.logo-img{width:40cqw;height:auto;display:block;filter:drop-shadow(0 3px 10px rgba(0,0,0,.5))}
+.cover-top .logo-img,.back-top .logo-img{width:44cqw}
 
 /* ---------------- body columns ---------------- */
 .two-col{display:grid;grid-template-columns:1.55fr 1fr;gap:6cqw;align-items:start}
@@ -519,7 +511,7 @@ blockquote{margin:3cqw 0 0;padding-left:3cqw;border-left:3px solid var(--red);
 .service{overflow:hidden}
 .bignum{position:absolute;z-index:1;top:3cqw;right:6cqw;
   font-family:"Anton",sans-serif;font-size:34cqw;line-height:1;
-  color:rgba(218,33,40,.10);letter-spacing:-.02em;pointer-events:none}
+  color:rgba(48,209,88,.10);letter-spacing:-.02em;pointer-events:none}
 .prest-lbl{margin-top:1cqw}
 .prest{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .prest li{display:grid;grid-template-columns:1fr;gap:.7cqw;padding:2.2cqw 0;
@@ -535,12 +527,13 @@ blockquote{margin:3cqw 0 0;padding-left:3cqw;border-left:3px solid var(--red);
 .nota p{margin:0;font-size:2cqw;line-height:1.45;color:#D5D9E0}
 
 /* emergency block (3.5) */
-.emerg{display:flex;flex-direction:column;gap:1cqw;background:var(--red);
-  color:#fff;padding:3cqw 3.4cqw;margin:0 0 4cqw}
-.emerg .el{color:rgba(255,255,255,.8);font-size:1.6cqw}
-.emerg .enum{font-family:"Anton",sans-serif;font-size:8cqw;line-height:.9;color:#fff;
+.emerg{display:flex;flex-direction:column;gap:1cqw;
+  background:linear-gradient(135deg,var(--red) 0%,#26BE4C 100%);
+  color:var(--ink);padding:3cqw 3.4cqw;margin:0 0 4cqw}
+.emerg .el{color:rgba(8,9,11,.72);font-size:1.6cqw}
+.emerg .enum{font-family:"Anton",sans-serif;font-size:8cqw;line-height:.9;color:var(--ink);
   letter-spacing:.01em}
-.emerg .ed{font-family:"Mont";font-weight:600;font-size:1.8cqw;color:rgba(255,255,255,.9)}
+.emerg .ed{font-family:"Mont";font-weight:600;font-size:1.8cqw;color:rgba(8,9,11,.85)}
 
 /* collaborazione footnote */
 .foot-note{margin-top:auto;font-size:1.7cqw;line-height:1.5;color:var(--steel);
@@ -548,14 +541,15 @@ blockquote{margin:3cqw 0 0;padding-left:3cqw;border-left:3px solid var(--red);
 
 /* ---------------- BACK ---------------- */
 .back{padding:0;justify-content:flex-start}
-.back-red{position:absolute;z-index:1;left:-16%;top:-18%;width:92%;height:74%;
-  background:linear-gradient(135deg,var(--red) 0%,var(--red-deep) 100%);
+.back-red{position:absolute;z-index:1;right:-20%;left:auto;top:-24%;width:66%;height:48%;
+  background:linear-gradient(150deg,var(--fill1) 0%,var(--fill2) 100%);
   transform:skewX(-14deg)}
-.back-red .bpwrap{left:8%;top:14%;width:56cqw;transform:skewX(14deg)}
+.back-red .bpwrap{right:4%;top:14%;left:auto;width:42cqw;transform:skewX(14deg)}
 .back-top{display:flex;justify-content:space-between;align-items:flex-start;
   padding:8cqw 8cqw 0;position:relative;z-index:3}
 .back-hero{padding:0 8cqw;margin-top:8cqw;position:relative;z-index:3}
-.back-hero .eyebrow{color:#fff;opacity:.85}
+.back-hero .eyebrow{color:var(--red);opacity:1}
+.back .docmeta{color:#F3F5F8}
 .back .htitle.sm{font-size:14cqw;margin-top:2cqw}
 .contacts{margin-top:auto;padding:0 8cqw;display:grid;grid-template-columns:1fr 1fr;
   column-gap:6cqw;position:relative;z-index:3}

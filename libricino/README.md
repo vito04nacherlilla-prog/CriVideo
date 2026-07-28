@@ -26,10 +26,13 @@ brochure di riferimento (rosso / grafite), portato a un livello superiore.
 
 ## Identità visiva
 
-- **Colori** — grafite `#0C0D10`, rosso segnale `#DA2128`, acciaio `#A6AEBB`.
+- **Colori (brand)** — verde `#30D158` (accento), nero `#08090B` (ink), pannelli
+  `#14161B`, testo chiaro `#C6CCD4`, testo tenue `#8B929C`. Le grandi fasce diagonali
+  usano un verde profondo per mantenere leggibile il testo bianco.
+- **Logo** — logo ufficiale KRECA (`logo-kreca.png`), incorporato nelle pagine.
 - **Type** — Anton (display condensato) + Montserrat (testo), incorporati come woff2.
 - **Motivo** — griglia tecnica "blueprint", crocini di taglio, rail di sezione,
-  cluster ingranaggio/goniometro sulle fasce rosse.
+  cluster ingranaggio/goniometro sulle fasce verdi.
 
 ## Rigenerare
 

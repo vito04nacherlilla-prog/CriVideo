@@ -1,592 +1,485 @@
 #!/usr/bin/env python3
-# Assembles the KRECA company booklet (single self-contained HTML file).
-import math, base64, os, html
-
+# KRECA — libricino aziendale RICCO (contenuti dal sito), stile industriale verde/nero.
+import math, base64, os
 SCR = os.path.dirname(os.path.abspath(__file__))
-ANTON = base64.b64encode(open(os.path.join(SCR, "anton.woff2"), "rb").read()).decode()
-MONT  = base64.b64encode(open(os.path.join(SCR, "mont.woff2"), "rb").read()).decode()
-LOGO  = base64.b64encode(open(os.path.join(SCR, "logo-kreca.png"), "rb").read()).decode()
+ANTON = base64.b64encode(open(os.path.join(SCR,"anton.woff2"),"rb").read()).decode()
+MONT  = base64.b64encode(open(os.path.join(SCR,"mont.woff2"),"rb").read()).decode()
+LOGO  = base64.b64encode(open(os.path.join(SCR,"logo-kreca.png"),"rb").read()).decode()
 
-# ---------------------------------------------------------------- blueprint motif
-def blueprint(seed_rot=0):
-    """A technical 'drawing' cluster: gear ring + protractor arcs + radial ticks."""
-    cx, cy, parts = 100, 100, []
-    # concentric circles
-    for r in (30, 52, 74, 92):
-        parts.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" />')
-    # radial ticks around outer ring
-    for a in range(0, 360, 5):
-        rad = math.radians(a + seed_rot)
-        long = (a % 30 == 0)
-        r1 = 74; r2 = 92 if long else 84
-        x1 = cx + r1*math.cos(rad); y1 = cy + r1*math.sin(rad)
-        x2 = cx + r2*math.cos(rad); y2 = cy + r2*math.sin(rad)
-        parts.append(f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" />')
-    # gear teeth (on r=30 ring)
-    teeth = []
-    for a in range(0, 360, 20):
-        rad = math.radians(a)
-        for off, r in ((-5, 30), (-3, 40), (3, 40), (5, 30)):
-            rr = math.radians(a + off)
-            teeth.append(f"{cx + r*math.cos(rr):.1f},{cy + r*math.sin(rr):.1f}")
-    parts.append(f'<polygon points="{" ".join(teeth)}" />')
-    parts.append(f'<circle cx="{cx}" cy="{cy}" r="12" />')
-    # crosshair
-    parts.append(f'<line x1="{cx}" y1="4" x2="{cx}" y2="196" />')
-    parts.append(f'<line x1="4" y1="{cy}" x2="196" y2="{cy}" />')
-    inner = "\n".join(parts)
-    return (f'<svg class="bp" viewBox="0 0 200 200" aria-hidden="true" '
-            f'fill="none" stroke="currentColor" stroke-width="0.8" '
-            f'vector-effect="non-scaling-stroke">{inner}</svg>')
-
-BP = blueprint()
-
-# ---------------------------------------------------------------- logo
-def logo(cls=""):
-    return (f'<img class="logo-img {cls}" alt="KRECA — Officina Metalmeccanica" '
-            f'src="data:image/png;base64,{LOGO}">')
-
-# ---------------------------------------------------------------- helpers
+def blueprint():
+    cx,cy,parts=100,100,[]
+    for r in (30,52,74,92): parts.append(f'<circle cx="{cx}" cy="{cy}" r="{r}"/>')
+    for a in range(0,360,5):
+        rad=math.radians(a); lo=(a%30==0); r1,r2=74,(92 if lo else 84)
+        parts.append(f'<line x1="{cx+r1*math.cos(rad):.1f}" y1="{cy+r1*math.sin(rad):.1f}" x2="{cx+r2*math.cos(rad):.1f}" y2="{cy+r2*math.sin(rad):.1f}"/>')
+    t=[]
+    for a in range(0,360,20):
+        for off,r in ((-5,30),(-3,40),(3,40),(5,30)):
+            rr=math.radians(a+off); t.append(f"{cx+r*math.cos(rr):.1f},{cy+r*math.sin(rr):.1f}")
+    parts.append(f'<polygon points="{" ".join(t)}"/>'); parts.append(f'<circle cx="{cx}" cy="{cy}" r="12"/>')
+    parts.append(f'<line x1="{cx}" y1="4" x2="{cx}" y2="196"/>'); parts.append(f'<line x1="4" y1="{cy}" x2="196" y2="{cy}"/>')
+    return ('<svg class="bp" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="0.8" vector-effect="non-scaling-stroke">'+"".join(parts)+'</svg>')
+BP=blueprint()
+def logo(cls=""): return f'<img class="logo-img {cls}" alt="KRECA — Officina Metalmeccanica" src="data:image/png;base64,{LOGO}">'
+def rail(sez): return f'<div class="rail"><span class="sez">SEZ</span><span class="sezn">{sez}</span></div>'
+def head(sez,kick,title): return rail(sez)+f'<header class="phead"><span class="kick">{kick}</span><h2 class="ptitle">{title}</h2></header>'
 def prest(items):
-    lis = ""
-    for t, d in items:
-        lis += f'<li><span class="pt">{t}</span><span class="pd">{d}</span></li>'
-    return f'<ul class="prest">{lis}</ul>'
+    return '<ul class="prest">'+"".join(f'<li><span class="pt">{t}</span><span class="pd">{d}</span></li>' for t,d in items)+'</ul>'
+def norme(items):
+    return '<div class="norme">'+"".join(f'<div class="nb"><span class="nk">{k}</span><span class="nv">{v}</span></div>' for k,v in items)+'</div>'
+def nota(t): return f'<div class="nota"><span class="nl">Nota operativa</span><p>{t}</p></div>'
 
-def nota(txt):
-    return f'<div class="nota"><span class="nl">Nota operativa</span><p>{txt}</p></div>'
-
-def head(sez, kicker, title):
-    return (f'<div class="rail"><span class="sez">SEZ</span>'
-            f'<span class="sezn">{sez}</span></div>'
-            f'<header class="phead"><span class="kick">{kicker}</span>'
-            f'<h2 class="ptitle">{title}</h2></header>')
-
-# ================================================================ PAGES
-pages = []
-
-# ---- COVER -------------------------------------------------------------
-pages.append(f'''<section class="leaf cover">
-  <div class="crop"></div>
+pages=[]
+# ---- COVER ----
+pages.append(f'''<section class="leaf cover"><div class="crop"></div>
   <div class="cover-red"><div class="bpwrap">{BP}</div></div>
-  <div class="cover-top">
-    {logo("logo lg")}
-    <div class="docmeta">
-      <span>DOC · KRC / BR / 2025</span>
-      <span>PROFILO AZIENDALE — REV.05</span>
-    </div>
-  </div>
-  <div class="cover-hero">
-    <span class="eyebrow">KRECA S.r.l. — Profilo aziendale</span>
-    <h1 class="htitle">Officina<br>metal<span class="hy">—</span><br>meccanica</h1>
-    <p class="lead">General contractor metalmeccanico. Officina di produzione
-      interna. Fornitura, posa e pronto intervento.</p>
-  </div>
+  <div class="cover-top">{logo("lg")}<div class="docmeta"><span>DOC · KRC / BR / 2026</span><span>PROFILO AZIENDALE — REV.06</span></div></div>
+  <div class="cover-hero"><span class="eyebrow">General contractor · Puglia &amp; Basilicata · ISO 9001</span>
+    <h1 class="htitle">Un solo<br>partner,<br><span class="hg">ogni opera.</span></h1>
+    <p class="lead">Costruzioni metalliche, chiusure e sicurezza, facility e pronto intervento H24 —
+    seguiti dall'inizio alla fine da un unico referente.</p></div>
   <div class="cover-foot">
     <div class="cf"><span class="cfk">Operativi dal</span><span class="cfv">2019</span></div>
-    <div class="cf"><span class="cfk">Area</span><span class="cfv">Puglia · Basilicata — 8 province</span></div>
-    <div class="cf"><span class="cfk">Contatti</span><span class="cfv">080 875 5152 · +39 351 805 5489</span></div>
-    <div class="cf web"><span class="cfk">Web</span><span class="cfv">www.kreca.it</span></div>
-  </div>
+    <div class="cf"><span class="cfk">Copertura</span><span class="cfv">Puglia · Basilicata</span></div>
+    <div class="cf"><span class="cfk">Urgenze</span><span class="cfv">Pronto intervento H24</span></div>
+    <div class="cf web"><span class="cfk">Web</span><span class="cfv">www.kreca.it</span></div></div>
 </section>''')
 
-# ---- 01 L'AZIENDA ------------------------------------------------------
-dati = [
-    ("Ragione sociale", "KRECA S.r.l. — Officina Metalmeccanica"),
-    ("Forma giuridica", "Società a responsabilità limitata"),
-    ("Sede legale", "Via Giotto 5, 70018 Rutigliano (BA)"),
-    ("Sede operativa", "S.P. 240 delle Grotte Orientali 290, Rutigliano (BA)"),
-    ("P.IVA / C.F.", "09015760722"),
-    ("REA", "BA-665535"),
-    ("Attiva dal", "2019 — esperienza artigiana pregressa"),
-    ("Area di competenza", "Puglia e Basilicata — 8 province"),
-    ("Settore", "Lavorazione prodotti in metallo — ATECO 25"),
-]
-dati_rows = "".join(f'<div class="drow"><dt>{k}</dt><dd>{v}</dd></div>' for k, v in dati)
-stats = [("2019", "Operativi dal"), ("8", "Province coperte"),
-         ("2", "Regioni · PUG · BAS"), ("100%", "Produzione interna")]
-stat_html = "".join(
-    f'<div class="stat"><span class="sv">{v}</span><span class="sk">{k}</span></div>'
-    for v, k in stats)
-pages.append(f'''<section class="leaf azienda">
-  <div class="crop"></div>
-  {head("01", "L'azienda", "Officina metalmeccanica,<br>produzione interna e posa.")}
-  <div class="body two-col">
-    <div class="col-main">
-      <p>KRECA S.r.l. è un'officina metalmeccanica specializzata nella lavorazione
-      del ferro e dell'alluminio e nella realizzazione, fornitura e posa in opera di
-      serramenti, sistemi di chiusura e soluzioni di sicurezza. Il cuore dell'azienda
-      è la propria <strong>officina di produzione interna</strong>: carpenteria in
-      ferro, serramenti in ferro e alluminio, cancelli, inferriate, persiane e
-      manufatti su misura nascono internamente, con controllo dell'intero ciclo —
-      dalla presa delle misure fino alla posa — senza dipendere da terzi per le
-      lavorazioni principali.</p>
-      <p>Accanto alla produzione diretta offriamo fornitura e posa per i prodotti che
-      completano la gamma — serramenti in PVC, vetrate e zanzariere — selezionati
-      presso partner qualificati e installati dalle nostre squadre. Il cliente trova
-      così in KRECA un <strong>unico interlocutore</strong> per l'intera opera, dalle
-      strutture portanti fino alle finiture.</p>
-      <p>Operiamo su tutta la Puglia e la Basilicata — otto province — con squadre
-      distribuite e reperibilità per gli interventi urgenti. Attivi dal 2019, nati da
-      una consolidata esperienza artigiana nella lavorazione del metallo e strutturati
-      in S.r.l. per commesse di maggiore complessità, come partner di gruppi industriali
-      e società di facility management.</p>
-      <blockquote>Una struttura decisionale snella, un interlocutore unico e la
-      capacità di intervenire rapidamente su tutto il territorio di competenza.</blockquote>
-    </div>
-    <aside class="col-side">
-      <span class="side-label">Dati identificativi</span>
-      <dl class="dati">{dati_rows}</dl>
-    </aside>
-  </div>
-  <div class="statband">{stat_html}</div>
+# ---- INDICE ----
+toc=[("01","Chi siamo","L'officina, la squadra, la filosofia"),
+     ("02","La nostra storia","Dal 2019 alla S.r.l."),
+     ("03","Perché KRECA","Sei vantaggi concreti"),
+     ("04","Il metodo","Dal sopralluogo al collaudo"),
+     ("05","Costruzioni metalliche","Carpenteria e strutture in acciaio"),
+     ("06","Chiusure &amp; sicurezza","Serramenti, facciate, blindature"),
+     ("07","Facility &amp; logistica","Manutenzione e gestione continuativa"),
+     ("08","Pronto intervento H24","Fabbro e urgenze in tutta la regione"),
+     ("09","Settori serviti","Retail, industria, condomìni, privati"),
+     ("10","Lavori recenti","Hanno scelto KRECA"),
+     ("11","Zone servite","Puglia e Basilicata"),
+     ("12","Certificazioni &amp; norme","Qualità e conformità"),
+     ("13","Glossario tecnico","I termini che contano"),
+     ("14","Domande frequenti","Le risposte più utili"),
+     ("15","Contatti","Parliamone")]
+toc_html="".join(f'<a class="trow"><span class="tn">{n}</span><span class="tt">{t}</span><span class="td">{d}</span></a>' for n,t,d in toc)
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("—","Indice","Cosa trovi<br>in questo profilo.")}
+  <nav class="toc">{toc_html}</nav></section>''')
+
+# ---- 01 CHI SIAMO ----
+dati=[("Ragione sociale","KRECA S.r.l. — Officina Metalmeccanica"),
+      ("Forma giuridica","Società a responsabilità limitata"),
+      ("Sede legale","Via Giotto 5, 70018 Rutigliano (BA)"),
+      ("Sede operativa","S.P. 240 delle Grotte Orientali 290, Rutigliano (BA)"),
+      ("P.IVA / C.F.","09015760722"),("REA","BA-665535"),
+      ("Attiva dal","2019 — esperienza artigiana pregressa"),
+      ("Settore","Lavorazione prodotti in metallo — ATECO 25")]
+dati_rows="".join(f'<div class="drow"><dt>{k}</dt><dd>{v}</dd></div>' for k,v in dati)
+pages.append(f'''<section class="leaf azienda"><div class="crop"></div>
+  {head("01","Chi siamo","Un'officina, un metodo,<br>un solo referente.")}
+  <div class="body two-col"><div class="col-main">
+    <p><strong>KRECA S.r.l.</strong> è un'officina metalmeccanica e un general contractor per l'edilizia
+    industriale e commerciale. Progettiamo, <strong>produciamo internamente nella nostra officina di
+    Rutigliano (BA)</strong> e posiamo in opera: carpenteria e strutture in acciaio, serramenti e facciate,
+    sistemi di chiusura e sicurezza.</p>
+    <p>Affianchiamo alla produzione diretta un servizio completo di <strong>facility &amp; logistica</strong>
+    per capannoni e poli logistici e un <strong>pronto intervento H24</strong> su accessi e chiusure. Il
+    cliente ha così un <strong>unico interlocutore</strong> per l'intera opera — dalla struttura portante
+    alle finiture, dalla manutenzione all'emergenza.</p>
+    <p>Operiamo su tutta la <strong>Puglia e la Basilicata</strong> con squadre distribuite e reperibilità.
+    Ogni lavoro è eseguito a norma, con marcatura CE e documentazione utile anche alle detrazioni fiscali.</p>
+    <blockquote>Un solo partner, ogni opera. Dalla parola al preventivo, dalla posa alla manutenzione.</blockquote>
+  </div><aside class="col-side"><span class="side-label">Dati identificativi</span>
+    <dl class="dati">{dati_rows}</dl></aside></div>
 </section>''')
 
-# ---- 02 PERCHÉ ---------------------------------------------------------
-vals = [
-    ("01", "Officina di produzione propria",
-     "Ferro e alluminio lavorati nella nostra officina: controllo su qualità, "
-     "materiali, finiture e tempi di consegna, indipendenza dai fornitori terzi."),
-    ("02", "Interlocutore unico",
-     "Un solo referente per più categorie di intervento, anche nello stesso "
-     "cantiere: meno coordinamento, tempi morti ridotti, responsabilità chiara."),
-    ("03", "Copertura territoriale",
-     "Operatività su 8 province tra Puglia e Basilicata con squadre distribuite: "
-     "una presenza locale reale, non solo dichiarata."),
-    ("04", "Pronto intervento",
-     "Reperibilità e interventi urgenti su accessi e chiusure per la messa in "
-     "sicurezza e il ripristino rapido della funzionalità."),
-    ("05", "Struttura reattiva",
-     "Decisioni rapide e comunicazione diretta con la titolarità: un referente "
-     "unico segue la commessa dall'inizio alla fine."),
-    ("06", "Esperienza nel facility",
-     "Fornitore tecnico locale di gruppi di facility management, con reportistica, "
-     "tempi di risposta e sicurezza allineati agli standard del committente."),
-]
-cards = "".join(
-    f'<article class="vcard"><span class="vn">{n}</span>'
-    f'<h3>{t}</h3><p>{d}</p></article>' for n, t, d in vals)
-pages.append(f'''<section class="leaf">
-  <div class="crop"></div>
-  {head("02", "Perché scegliere KRECA", "Un solo partner,<br>ogni opera.")}
-  <p class="body intro">Il nostro valore per il committente si riassume in una
-  promessa semplice — <em>un solo partner, ogni opera</em> — che si traduce in sei
-  vantaggi concreti e verificabili.</p>
-  <div class="vgrid">{cards}</div>
+# ---- 02 STORIA ----
+tl=[("2019","Fondazione e radici","Nasce la ditta individuale KRECA di Jeliazkova Kremena, unendo la solida esperienza artigianale di Carmine nel settore metalmeccanico a una nuova visione operativa, focalizzata su carpenteria e manutenzioni industriali."),
+    ("2020 — 2024","Espansione e fiducia","Consolidamento delle competenze nei poli logistici e industriali della Puglia. L'azienda si afferma come partner affidabile per grandi manutenzioni e strutture su misura, ampliando il parco clienti."),
+    ("2025","Evoluzione in KRECA S.r.l.","Passaggio alla forma societaria di S.r.l. per rispondere alla crescente complessità dei progetti direzionali e industriali, mantenendo intatta la reattività e la passione delle origini familiari.")]
+tl_html="".join(f'<div class="tli"><span class="ty">{y}</span><h3>{t}</h3><p>{d}</p></div>' for y,t,d in tl)
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("02","La nostra storia","Una crescita<br>costruita sul campo.")}
+  <div class="timeline">{tl_html}</div></section>''')
+
+# ---- 03 PERCHÉ ----
+vals=[("01","Officina di produzione propria","Carpenteria e serramenti lavorati nella nostra officina di Rutigliano: controllo su qualità, materiali, finiture e tempi."),
+      ("02","Interlocutore unico","Un solo referente per costruzioni, chiusure, facility e urgenze — anche nello stesso cantiere."),
+      ("03","Certificati ISO 9001","Sistema di gestione qualità certificato e interventi a norma, con documentazione e attestazioni."),
+      ("04","Pronto intervento H24","Squadre dedicate pronte a intervenire, con tempi di risposta rapidi in tutta la provincia."),
+      ("05","Trasparenza sui costi","Preventivo chiaro prima di iniziare: nessuna sorpresa, tempi e prezzi definiti."),
+      ("06","Copertura Puglia &amp; Basilicata","Presenza reale sul territorio, con squadre distribuite e reperibilità per gli interventi urgenti.")]
+cards="".join(f'<article class="vcard"><span class="vn">{n}</span><h3>{t}</h3><p>{d}</p></article>' for n,t,d in vals)
+nums=[("2019","Operativi dal"),("H24","Pronto intervento"),("≈60′","Intervento in provincia"),("ISO 9001","Qualità certificata")]
+nums_html="".join(f'<div class="stat"><span class="sv">{v}</span><span class="sk">{k}</span></div>' for v,k in nums)
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("03","Perché scegliere KRECA","Un solo partner,<br>ogni opera.")}
+  <div class="vgrid six">{cards}</div>
+  <div class="statband">{nums_html}</div></section>''')
+
+# ---- 04 METODO ----
+steps=[("01","Sopralluogo e analisi","Veniamo da te: valutiamo esigenze, misure, impianti e vincoli tecnici del progetto."),
+       ("02","Preventivo e progettazione","Soluzione su misura con disegni esecutivi e preventivo chiaro, senza sorprese."),
+       ("03","Produzione in officina","Realizziamo strutture, serramenti e sistemi nella nostra officina, con materiali selezionati."),
+       ("04","Posa, collaudo e assistenza","Installazione a regola d'arte, collaudo e — se vuoi — manutenzione programmata nel tempo.")]
+steps_html="".join(f'<article class="mstep"><span class="mn">{n}</span><h3>{t}</h3><p>{d}</p></article>' for n,t,d in steps)
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("04","Il metodo","Dal sopralluogo<br>al collaudo.")}
+  <p class="body intro">Un percorso in quattro passi, uguale per ogni commessa: chiaro, tracciato e con un
+  unico referente che segue il lavoro dall'inizio alla fine.</p>
+  <div class="method">{steps_html}</div>
+  <div class="tline"><span>Trasparenza, nessuna sorpresa</span><b>Costi e tempi comunicati prima di iniziare.</b></div>
 </section>''')
 
-# ---- 03 SERVIZI INDEX --------------------------------------------------
-serv = [
-    ("3.1", "Costruzioni metalliche in ferro",
-     "Carpenteria, strutture portanti, soppalchi, scale e manufatti su disegno."),
-    ("3.2", "Serramenti e infissi",
-     "Ferro e alluminio prodotti internamente; PVC, vetrate e zanzariere con partner."),
-    ("3.3", "Chiusure e sicurezza",
-     "Serrande, cancelli, portoni, porte blindate, serrature e automazioni."),
-    ("3.4", "Manutenzione tecnica",
-     "Ordinaria e straordinaria su elementi metallici, serramenti e chiusure."),
-    ("3.5", "Pronto intervento",
-     "Reperibilità e urgenze su accessi e chiusure, in tutta l'area di competenza."),
-]
-idx = "".join(
-    f'<a class="sidx"><span class="sidn">{n}</span>'
-    f'<span class="sidt">{t}</span><span class="sidd">{d}</span></a>'
-    for n, t, d in serv)
-pages.append(f'''<section class="leaf servcover">
-  <div class="crop"></div>
-  {head("03", "Aree di servizio", "Dalla progettazione<br>alla posa.")}
-  <p class="body intro">Cinque aree di intervento coordinate da un unico
-  interlocutore, dalla produzione in officina alla posa e alla manutenzione.</p>
-  <nav class="servindex">{idx}</nav>
-</section>''')
+# ---- AREE DI SERVIZIO INDEX ----
+serv=[("05","Costruzioni metalliche","Carpenteria, strutture portanti, soppalchi, scale e accessi in acciaio."),
+      ("06","Chiusure &amp; sicurezza","Serramenti, facciate continue, blindature, serrande e grate."),
+      ("07","Facility &amp; logistica","Manutenzione tecnica e gestione continuativa per industria e logistica."),
+      ("08","Pronto intervento H24","Fabbro e urgenze su serrature, serrande e accessi, in tutta la regione.")]
+idx="".join(f'<a class="sidx"><span class="sidn">{n}</span><span class="sidt">{t}</span><span class="sidd">{d}</span></a>' for n,t,d in serv)
+pages.append(f'''<section class="leaf servcover"><div class="crop"></div>
+  {head("05—08","Aree di servizio","Quattro aree,<br>un unico partner.")}
+  <p class="body intro">Dalla struttura portante alla messa in sicurezza notturna: quattro aree coordinate
+  che coprono l'intero ciclo di vita dell'immobile industriale e commerciale.</p>
+  <nav class="servindex">{idx}</nav></section>''')
 
-# ---- service detail template ------------------------------------------
-def service(sez, num, title, intro, items, nota_txt=None, emergency=None):
-    body = f'<p class="body intro">{intro}</p>'
+def service(sez,kick,title,intro,items,nrm=None,nota_txt=None,emergency=None,bignum=""):
+    body=f'<p class="body intro">{intro}</p>'
     if emergency:
-        body += (f'<div class="emerg"><span class="el">Attivazione diretta</span>'
-                 f'<a class="enum">{emergency}</a>'
-                 f'<span class="ed">Reperibilità · 8 province · Puglia e Basilicata</span></div>')
-    body += '<span class="side-label prest-lbl">Prestazioni principali</span>'
-    body += prest(items)
-    if nota_txt:
-        body += nota(nota_txt)
-    return f'''<section class="leaf service">
-  <div class="crop"></div>
-  <span class="bignum">{num}</span>
-  {head(sez, "Aree di servizio", title)}
-  {body}
-</section>'''
+        body+=f'<div class="emerg"><span class="el">Emergenza · attivazione diretta</span><a class="enum">{emergency}</a><span class="ed">Squadre pronte a intervenire entro ~60 minuti · H24 · Puglia e Basilicata</span></div>'
+    body+='<span class="side-label prest-lbl">Cosa realizziamo</span>'+prest(items)
+    if nrm: body+='<span class="side-label prest-lbl">A norma di legge</span>'+norme(nrm)
+    if nota_txt: body+=nota(nota_txt)
+    bn=f'<span class="bignum">{bignum}</span>' if bignum else ''
+    return f'<section class="leaf service"><div class="crop"></div>{bn}{head(sez,kick,title)}{body}</section>'
 
-pages.append(service("03 · 3.1", "3.1", "Costruzioni metalliche<br>in ferro.",
-    "Progettiamo, produciamo in officina e posiamo strutture e manufatti in ferro, "
-    "su misura per contesti civili, commerciali e industriali. Ogni elemento nasce "
-    "internamente — dal taglio alla saldatura, dalle finiture al trattamento "
-    "protettivo — con controllo diretto in ogni fase.",
-    [("Carpenteria e strutture portanti", "Travi, pilastri, telai e ossature in ferro per capannoni, ampliamenti, tettoie e coperture."),
-     ("Soppalchi industriali e commerciali", "Su misura per magazzini, punti vendita e ambienti produttivi, calcolati sui carichi di esercizio."),
-     ("Scale, parapetti, ringhiere e passerelle", "Interne ed esterne, conformi ai requisiti di sicurezza vigenti."),
-     ("Telai, supporti e manufatti su disegno", "Su disegno del cliente o progettati internamente, per impiantistica e allestimenti."),
-     ("Lavorazioni su misura per conto terzi", "Taglio, piegatura, foratura, saldatura e assemblaggio per imprese e general contractor.")],
-    "Officina interna: tutte le lavorazioni sul ferro vengono eseguite in sede, "
-    "garantendo continuità produttiva, controllo qualità e riduzione dei tempi."))
+pages.append(service("05","Aree di servizio","Costruzioni<br>metalliche.",
+  "Progettiamo, produciamo in officina e posiamo strutture e manufatti in ferro e acciaio, su misura per contesti civili, commerciali e industriali. Ogni elemento nasce internamente — dal taglio alla saldatura MIG/MAG e TIG, dalle finiture al trattamento protettivo.",
+  [("Carpenteria e strutture portanti","Travi, pilastri, telai e ossature in acciaio per capannoni, ampliamenti, tettoie e coperture."),
+   ("Soppalchi industriali","Strutture autoportanti che recuperano superficie per stoccaggio, produzione o uffici senza ampliare l'edificio."),
+   ("Scale, parapetti e passerelle","Scale interne ed esterne, scale antincendio, camminamenti e passerelle di servizio conformi."),
+   ("Recinzioni, cancelli e manufatti su disegno","Recinzioni perimetrali, cancelli, staffe e manufatti sviluppati su disegno del cliente."),
+   ("Lavorazioni per conto terzi","Taglio, piegatura, foratura, saldatura e assemblaggio per imprese e general contractor.")],
+  nrm=[("Sicurezza strutturale","Calcoli e pratiche genio civile tramite rete di ingegneri partner."),
+       ("Zincatura a caldo · EN ISO 1461","Trattamenti anticorrosivi presso impianti certificati per la massima durata."),
+       ("Accessi sicuri · EN ISO 14122","Camminamenti, passerelle e scale di servizio a norma.")],
+  nota_txt="Officina interna a Rutigliano: consegniamo il manufatto con relazioni di calcolo, schede tecniche dei materiali e attestazioni richieste dalle autorità competenti.",
+  bignum="05"))
 
-pages.append(service("03 · 3.2", "3.2", "Serramenti<br>e infissi.",
-    "Gamma completa per aperture interne ed esterne, in ambito residenziale, "
-    "commerciale e direzionale. Produciamo internamente i serramenti in ferro e in "
-    "alluminio — a freddo o a taglio termico; per PVC, vetrate e zanzariere ci "
-    "avvaliamo di partner selezionati, con posa a regola d'arte.",
-    [("Alluminio a taglio termico", "Elevato isolamento termico e acustico, per abitazioni, uffici ed edifici a uso pubblico."),
-     ("Alluminio a freddo", "Ottimo rapporto tra resistenza, leggerezza e durata dove non serve il taglio termico."),
-     ("Serramenti e opere in ferro", "Infissi, telai, finestrature e chiusure in ferro su misura, realizzati internamente."),
-     ("Infissi in PVC · fornitura e posa", "Serramenti in PVC di qualità, tramite partner qualificati e posa certificata."),
-     ("Vetrate e superfici vetrate", "Facciate continue, scorrevoli e sistemi minimali; posa curata direttamente da KRECA."),
-     ("Zanzariere · persiane e scuri", "Zanzariere a rullo, plissettate e scorrevoli; persiane e scuri in ferro o alluminio su misura.")]))
+pages.append(service("06","Aree di servizio","Chiusure<br>&amp; sicurezza.",
+  "Gamma completa per l'involucro e la protezione: serramenti, facciate, vetrate e sistemi di sicurezza passiva. Produciamo internamente ferro e alluminio e ci avvaliamo di partner selezionati per PVC, vetro e componenti speciali — sempre con posa a regola d'arte.",
+  [("Serramenti in alluminio a taglio termico","Alte prestazioni termiche e acustiche per complessi industriali, direzionali e residenziali."),
+   ("Serramenti in PVC rinforzato e infissi su misura","Ottimo rapporto tra isolamento, durata e costo, con marcatura CE."),
+   ("Vetrate panoramiche e facciate continue","Sistemi tutto vetro, scorrevoli minimali e facciate strutturali."),
+   ("Carpenteria di sicurezza e porte blindate","Porte blindate di ultima generazione, inferriate e grate a snodo su misura."),
+   ("Chiusure industriali, serrande &amp; grate","Serrande motorizzate, portoni sezionali e a libro, automazioni e ripristino strutturale.")],
+  nrm=[("Antieffrazione · UNI EN 1627","Classi di resistenza certificate (RC2 / RC3) per i sistemi installati."),
+       ("Tenuta agli agenti · UNI EN 13830","Prestazione e marcatura CE per facciate continue e serramenti esterni."),
+       ("Compartimentazione · REI / EW","Chiusure tecniche e barriere tagliafuoco certificate per i luoghi di lavoro."),
+       ("Tracciabilità di filiera · DoP","Gestione dei Certificati di Costanza della Prestazione e marcatura CE.")],
+  bignum="06"))
 
-pages.append(service("03 · 3.3", "3.3", "Chiusure<br>e sicurezza.",
-    "Realizziamo, forniamo e installiamo sistemi di chiusura, protezione e sicurezza "
-    "per accessi e aperture, in ambienti privati, commerciali e a uso pubblico. "
-    "Copriamo l'intero ciclo, dalla misura sul posto alla messa a punto finale.",
-    [("Serrande, tapparelle e avvolgibili", "Commerciali e industriali, manuali o motorizzate; installazione, manutenzione e sostituzione."),
-     ("Cancelli e inferriate", "Pedonali e carrabili, grate di sicurezza fisse o apribili, in ferro su misura."),
-     ("Portoni", "Industriali e sezionali per accessi civili e produttivi, manuali o automatizzati."),
-     ("Porte blindate di ultima generazione", "Installazione a norma e taratura di tutti gli accessori per la massima protezione."),
-     ("Serrature, cilindri e automazioni", "Serrature meccaniche ed elettroniche, cilindri europei, sistemi master-key e automazioni per cancelli e portoni.")]))
+pages.append(service("07","Aree di servizio","Facility<br>&amp; logistica.",
+  "Per chi gestisce un capannone, un magazzino o un polo logistico la manutenzione è un costo continuo. Il nostro facility management la trasforma in un servizio ordinato e prevedibile: un unico referente per chiusure meccanizzate, carpenteria e interventi edili a norma.",
+  [("Manutenzione di chiusure e portoni","Serrande motorizzate, portoni sezionali e automazioni: controlli, riparazioni e sostituzioni."),
+   ("Strutture e carpenteria","Interventi su ringhiere, recinzioni, scale e strutture in acciaio con cedimenti o rischi."),
+   ("Interventi edili a norma","Piccole opere edili, allestimenti e adeguamenti coordinati con la produzione in officina."),
+   ("Contratti di facility management","Operatività continuativa per attività, capannoni e poli logistici, con reportistica dedicata.")],
+  nota_txt="Processo in 4 fasi: sopralluogo e analisi · piano e preventivo · esecuzione con squadra dedicata · gestione continuativa con manutenzione programmata e referente unico nel tempo.",
+  bignum="07"))
 
-pages.append(service("03 · 3.4", "3.4", "Manutenzione<br>tecnica.",
-    "Manutenzione tecnica di elementi metallici, serramenti e sistemi di chiusura di "
-    "immobili, capannoni industriali e poli logistici. Operiamo in appalto diretto o "
-    "in subappalto per gruppi di facility management, con operatività continuativa e "
-    "reportistica dedicata.",
-    [("Ordinaria e straordinaria", "Interventi programmati e non su carpenteria, serramenti, portoni, cancelli e chiusure."),
-     ("Ripristino e sostituzione componenti", "Componenti usurati o non conformi, adeguamento e ripristino della piena funzionalità."),
-     ("Interventi programmati e su chiamata", "Squadre dedicate e pianificazione dei fermi, con minimo impatto sull'attività del committente.")],
-    "Attivi come fornitore tecnico locale per gruppi di facility management: "
-    "standard di reportistica, sicurezza e tempi di risposta allineati al committente."))
+pages.append(service("08","Aree di servizio","Pronto intervento<br>H24.",
+  "Serrature bloccate, serrande o cancelli fuori uso, infissi e vetrine da mettere in sicurezza: la squadra d'urgenza di KRECA opera H24 in Puglia e Basilicata, con base operativa a Rutigliano. Costi trasparenti, comunicati prima di iniziare.",
+  [("Sblocco e apertura","Serrande, cancelli motorizzati e serrature bloccate, preservando l'integrità del sistema."),
+   ("Riparazione urgente","Motorizzazioni, serrature e componenti meccanici di porte, portoni e chiusure."),
+   ("Messa in sicurezza post-effrazione","Chiusura provvisoria, sostituzione dei componenti e ripristino delle condizioni di sicurezza."),
+   ("Urgenze su strutture e aziende","Riparazioni su ringhiere, scale e strutture; pronto intervento per capannoni e poli logistici.")],
+  emergency="+39 351 805 5489", bignum="08"))
 
-pages.append(service("03 · 3.5", "3.5", "Pronto intervento<br>accessi e chiusure.",
-    "Servizio di reperibilità e intervento urgente su tutta l'area di competenza, per "
-    "la messa in sicurezza e il ripristino della funzionalità di accessi e chiusure a "
-    "seguito di guasti, blocchi o effrazioni.",
-    [("Apertura e sblocco", "Serrande, cancelli motorizzati e serrature bloccate, preservando l'integrità del sistema ove possibile."),
-     ("Riparazione urgente", "Motorizzazioni, serrature e componenti meccanici di porte, portoni e sistemi di chiusura."),
-     ("Messa in sicurezza post-effrazione", "Chiusura provvisoria, sostituzione dei componenti danneggiati e ripristino delle condizioni di sicurezza.")],
-    emergency="+39 351 805 5489"))
+# ---- SETTORI ----
+sett=[("Retail &amp; GDO","Negozi, punti vendita e grande distribuzione: serrande, vetrine, porte automatiche e sistemi di sicurezza, con pronto intervento H24 per non fermare l'attività."),
+      ("Industria &amp; logistica","Capannoni e poli logistici: strutture portanti, portoni industriali, manutenzione e facility management continuativo."),
+      ("Condomìni &amp; residenziale","Edifici e parti comuni: infissi, ringhiere, scale, cancelli, recinzioni e inferriate, a norma e con documentazione per le detrazioni."),
+      ("Uffici &amp; direzionale","Facciate continue, serramenti a taglio termico, porte di sicurezza e allestimenti per spazi di lavoro."),
+      ("Privati &amp; abitazioni","Case e ville: infissi termoacustici, chiusure civili, carpenteria metallica leggera e sistemi di sicurezza."),
+      ("Banche &amp; uffici tecnici","Strutture portanti, accessi blindati e messa in sicurezza per sedi e sportali d'ingresso.")]
+sett_html="".join(f'<article class="sect"><h3>{t}</h3><p>{d}</p></article>' for t,d in sett)
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("09","Settori serviti","Un partner per<br>ogni contesto.")}
+  <div class="sectors">{sett_html}</div></section>''')
 
-# ---- 04·05 COLLABORAZIONE + QUALIFICHE --------------------------------
-quals = [
-    ("Mercati elettronici P.A.", "Iscrizione a MEPA e a EmPULIA."),
-    ("Patente a crediti", "Patente a crediti INL — art. 27 D.Lgs. 81/2008, con dotazione conforme ai requisiti di legge."),
-    ("Copertura assicurativa", "Polizza RC verso Terzi, massimale € 3.000.000 — Generali Italia."),
-    ("Regolarità contributiva", "DURC regolare. Applicazione del CCNL Metalmeccanica."),
-    ("Sistema qualità", "Conforme a UNI EN ISO 9001 — in corso di certificazione."),
-]
-qrows = "".join(f'<div class="qrow"><dt>{k}</dt><dd>{v}</dd></div>' for k, v in quals)
-pages.append(f'''<section class="leaf">
-  <div class="crop"></div>
-  {head("04 · 05", "Collaborazione · Qualifiche", "Come lavoriamo<br>e le nostre garanzie.")}
-  <div class="body two-col wide">
-    <div class="col-main">
-      <span class="side-label">04 — Modalità di collaborazione</span>
-      <p>KRECA opera sia in appalto diretto sia come impresa esecutrice in subappalto
-      per general contractor e società di facility management. In quest'ultima veste
-      mette a disposizione la propria officina e le proprie squadre come
-      <strong>fornitore tecnico locale</strong>, garantendo continuità operativa e
-      rispetto degli standard richiesti in materia di tempi, reportistica e sicurezza.</p>
-      <p>Per esigenze di volume superiori alla capacità diretta, l'azienda si avvale di
-      una rete selezionata di collaboratori e imprese partner, che coordina restando
-      <strong>unico responsabile</strong> nei confronti del committente.</p>
-    </div>
-    <aside class="col-side">
-      <span class="side-label">05 — Qualifiche, iscrizioni e coperture</span>
-      <dl class="quals">{qrows}</dl>
-    </aside>
-  </div>
-  <p class="foot-note">La documentazione amministrativa completa — visura camerale,
-  DURC, patente a crediti, polizza assicurativa e autocertificazioni di legge — è
-  disponibile e viene fornita in fase di qualifica fornitore.</p>
+# ---- LAVORI RECENTI ----
+proj=[("Banco BPM","Monopoli (BA)","02 / 2026","Carpenteria","Strutture portanti dei portoni d'ingresso, serrate e messe in sicurezza."),
+      ("Generali","Bari (BA)","11 / 2025","Manutenzione","Riparazioni di falegnameria e carpenteria per manutenzione straordinaria in sede."),
+      ("Baglioni","Otranto (LE)","04 / 2026","Carpenteria","Pavimentazione gettata, recinzione perimetrale e porta metallica del vano quadro."),
+      ("Polo logistico","Provincia di Bari","2025","Facility","Manutenzione programmata di serrande e portoni industriali in contratto continuativo.")]
+proj_html="".join(f'<article class="proj"><div class="pjh"><span class="pjt">{tag}</span><span class="pjd">{date}</span></div><h3>{name}</h3><span class="pjl">{loc}</span><p>{desc}</p></article>' for name,loc,date,tag,desc in proj)
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("10","Lavori recenti","Hanno scelto<br>KRECA.")}
+  <p class="body intro">In primo piano alcuni lavori dei nostri settori — carpenteria, serramenti, chiusure e sicurezza — per aziende, gruppi e privati.</p>
+  <div class="projects">{proj_html}</div></section>''')
+
+# ---- ZONE ----
+puglia=["Rutigliano","Bari","Mola di Bari","Polignano a Mare","Conversano","Putignano","Monopoli","Triggiano","Noicattaro","Casamassima","Acquaviva delle Fonti","Gioia del Colle","Altamura","Gravina in Puglia","Bitonto","Modugno","Molfetta","Bisceglie","Trani","Andria","Barletta","Brindisi","Taranto","Lecce","Foggia"]
+basil=["Matera","Potenza","Pisticci","Policoro","Bernalda","Ferrandina"]
+def chips(lst): return '<div class="chips">'+"".join(f'<span class="chip">{c}</span>' for c in lst)+'</div>'
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("11","Zone servite","Puglia e Basilicata,<br>sul territorio.")}
+  <p class="body intro">Base operativa a <strong>Rutigliano (BA)</strong>, squadre distribuite e reperibilità per gli interventi urgenti su tutta l'area di competenza.</p>
+  <div class="zone"><span class="zl">Puglia — provincia di Bari e oltre</span>{chips(puglia)}</div>
+  <div class="zone"><span class="zl">Basilicata — Materano e Potentino</span>{chips(basil)}</div>
 </section>''')
 
-# ---- BACK / CONTATTI ---------------------------------------------------
-contacts = [
-    ("Telefono", "080 875 5152"),
-    ("Mobile", "+39 351 805 5489"),
-    ("E-mail", "info@kreca.it"),
-    ("PEC", "kreca@pec.it"),
-    ("Web", "www.kreca.it"),
-    ("Social", "IG @kreca_srl · FB /krecasrl"),
-    ("Sede legale", "Via Giotto 5, 70018 Rutigliano (BA)"),
-    ("Sede operativa", "S.P. 240 Grotte Orientali 290, Rutigliano (BA)"),
-]
-crows = "".join(f'<div class="crow"><dt>{k}</dt><dd>{v}</dd></div>' for k, v in contacts)
-pages.append(f'''<section class="leaf back">
-  <div class="crop"></div>
+# ---- CERTIFICAZIONI ----
+cert=[("ISO 9001","Sistema di gestione qualità certificato, applicato a ogni intervento."),
+      ("D.Lgs 81/08","Pieno rispetto delle norme di sicurezza sul lavoro; patente a crediti INL."),
+      ("Dichiarazioni di conformità","Impianti e opere consegnati a regola d'arte, con attestazione."),
+      ("Marcatura CE","Serramenti e facciate con tracciabilità e Dichiarazione di Prestazione (DoP)."),
+      ("Copertura assicurativa","Polizza RC verso Terzi con massimale di € 3.000.000."),
+      ("Regolarità e mercati P.A.","DURC regolare, CCNL Metalmeccanica; iscrizione a MEPA ed EmPULIA.")]
+cert_html="".join(f'<div class="crow2"><dt>{k}</dt><dd>{v}</dd></div>' for k,v in cert)
+en=[("UNI EN 1627","Antieffrazione RC2/RC3"),("EN 356","Vetro di sicurezza"),("UNI EN 13830","Facciate continue"),
+    ("EN ISO 1461","Zincatura a caldo"),("EN ISO 14122","Accessi e passerelle"),("REI / EW","Compartimentazione")]
+en_html="".join(f'<span class="chip mono">{k}<i>{v}</i></span>' for k,v in en)
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("12","Certificazioni &amp; norme","Qualità certificata,<br>opere a norma.")}
+  <div class="body two-col wide"><div class="col-main"><span class="side-label">Qualifiche e coperture</span>
+    <dl class="quals">{cert_html}</dl></div>
+    <aside class="col-side"><span class="side-label">Norme tecniche di riferimento</span>
+    <div class="chips en">{en_html}</div>
+    <p class="foot-note">Documentazione amministrativa completa (visura, DURC, patente a crediti, polizza, DoP) disponibile in fase di qualifica fornitore.</p></aside></div>
+</section>''')
+
+# ---- GLOSSARIO ----
+gloss=[("Classe RC2 / RC3 (EN 1627)","Misura quanto un infisso o un'inferriata resiste a un tentativo di scasso: la RC2 regge attrezzi manuali semplici per ≥3 minuti, la RC3 strumenti pesanti per ≥5."),
+       ("Vetro stratificato antieffrazione","Lastre unite da fogli plastici (PVB): in caso di urto i frammenti restano incollati, mantenendo la barriera (EN 356)."),
+       ("Cilindro europeo","Nucleo di cifratura sostituibile con perni in acciaio, anti-bumping e anti-trapano e chiavi a duplicazione protetta."),
+       ("Defender antishock","Corazza in acciaio temperato sul cilindro: impedisce di strappare, forare o estrarre la serratura."),
+       ("Molla di richiamo (serrande)","Bilancia il peso del manto e ne permette il sollevamento: la sua rottura è tra le cause più frequenti di fermo per i negozi."),
+       ("Soppalco industriale","Struttura metallica autoportante che aggiunge un piano dentro un capannone, recuperando superficie utile."),
+       ("Saldatura MIG/MAG e TIG","MIG/MAG a filo continuo, veloce; TIG con elettrodo di tungsteno, più lento ma con giunti puliti su materiali delicati."),
+       ("Marcatura CE infissi","Garantisce la legalità del prodotto e l'accesso alle detrazioni fiscali.")]
+gl_html="".join(f'<div class="gitem"><h3>{t}</h3><p>{d}</p></div>' for t,d in gloss)
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("13","Glossario tecnico","I termini<br>che contano.")}
+  <p class="body intro">Parliamo la stessa lingua: i termini più utili per scegliere con consapevolezza infissi, chiusure e sicurezza.</p>
+  <div class="glossary">{gl_html}</div></section>''')
+
+# ---- FAQ ----
+faq=[("Intervenite in urgenza, anche di notte?","Sì. La squadra di pronto intervento opera H24 in Puglia e Basilicata, con tempi di risposta rapidi in provincia e costi comunicati prima di iniziare."),
+     ("Come funziona il preventivo?","Facciamo un sopralluogo, prendiamo le misure e ti proponiamo una soluzione con preventivo chiaro: tempi e costi definiti, senza sorprese."),
+     ("Rilasciate documentazione per le detrazioni?","Sì. Lavorazioni a norma, marcatura CE e dichiarazioni di conformità: forniamo la documentazione utile anche alle detrazioni fiscali."),
+     ("Producete internamente?","Sì. Carpenteria e serramenti nascono nella nostra officina di Rutigliano (BA): controlliamo qualità, materiali e tempi."),
+     ("Seguite anche la manutenzione nel tempo?","Sì. Con i contratti di facility offriamo manutenzione programmata e un referente unico continuativo per capannoni e poli logistici."),
+     ("Su quali zone operate?","Su tutta la Puglia e la Basilicata, con squadre distribuite sul territorio e reperibilità per le urgenze.")]
+faq_html="".join(f'<div class="faq"><h3>{q}</h3><p>{a}</p></div>' for q,a in faq)
+pages.append(f'''<section class="leaf"><div class="crop"></div>
+  {head("14","Domande frequenti","Le risposte<br>più utili.")}
+  <div class="faqs">{faq_html}</div></section>''')
+
+# ---- CONTATTI / BACK ----
+contacts=[("Telefono","080 875 5152"),("Mobile · H24","+39 351 805 5489"),("E-mail","info@kreca.it"),
+          ("PEC","kreca@pec.it"),("Web","www.kreca.it"),("Social","IG @kreca_srl · FB /krecasrl"),
+          ("Sede legale","Via Giotto 5, 70018 Rutigliano (BA)"),("Sede operativa","S.P. 240 Grotte Orientali 290, Rutigliano (BA)")]
+crows="".join(f'<div class="crow"><dt>{k}</dt><dd>{v}</dd></div>' for k,v in contacts)
+pages.append(f'''<section class="leaf back"><div class="crop"></div>
   <div class="back-red"><div class="bpwrap">{BP}</div></div>
-  <div class="back-top">{logo("logo lg")}
-    <span class="docmeta"><span>SEZ · 06 — Contatti</span></span></div>
-  <div class="back-hero">
-    <span class="eyebrow">Un solo partner, ogni opera</span>
-    <h1 class="htitle sm">Dalla<br>progettazione<br>alla posa.</h1>
-  </div>
+  <div class="back-top">{logo("lg")}<span class="docmeta"><span>SEZ · 15 — Contatti</span></span></div>
+  <div class="back-hero"><span class="eyebrow">Un solo partner, ogni opera</span>
+    <h1 class="htitle sm">Parliamone.<br>Dal preventivo<br>alla posa.</h1>
+    <p class="lead2">Richiedi un sopralluogo o un preventivo: ti rispondiamo in fretta, anche su WhatsApp.</p></div>
   <div class="contacts">{crows}</div>
-  <div class="back-foot">
-    <span>KRECA S.r.l. — Officina Metalmeccanica</span>
-    <span>P.IVA 09015760722 · REA BA-665535 · ATECO 25</span>
-  </div>
+  <div class="back-foot"><span>KRECA S.r.l. — Officina Metalmeccanica</span><span>P.IVA 09015760722 · REA BA-665535 · ATECO 25</span></div>
 </section>''')
 
-BOOK = "\n".join(pages)
+BOOK="\n".join(pages)
 
-# ================================================================ CSS
-CSS = """
-:root{
-  --ink:#08090B; --panel:#14161B; --panel-2:#1B1F27; --panel-3:#232833;
-  --red:#30D158; --red-deep:#1E9E43; --red-ink:#57DD78;   /* accent = brand green */
-  --fill1:#1E9E43; --fill2:#0C4A22;                        /* deep-green slash fill */
-  --steel:#8B929C; --steel-dim:#5A626E; --steel-fade:rgba(139,146,156,.16);
-  --paper:#EEF1F4; --on-paper:#14161B;
-  --white:#F3F5F8;
-  --line:rgba(139,146,156,.16); --line-strong:rgba(139,146,156,.32);
-}
-*{box-sizing:border-box}
-html,body{margin:0}
-body{
-  background:
-    radial-gradient(120% 80% at 50% -10%, #202531 0%, #0a0b0e 60%) fixed,
-    #0a0b0e;
-  color:var(--white);
-  font-family:"Mont",system-ui,sans-serif;
-  -webkit-font-smoothing:antialiased;
-  padding:clamp(14px,4vw,56px) 0 64px;
-}
+CSS=r"""
+:root{--ink:#08090B;--panel:#14161B;--panel-2:#1B1F27;--panel-3:#232833;
+ --red:#30D158;--red-deep:#1E9E43;--red-ink:#57DD78;--fill1:#1E9E43;--fill2:#0C4A22;
+ --steel:#8B929C;--steel-dim:#5A626E;--paper:#EEF1F4;--white:#F3F5F8;
+ --line:rgba(139,146,156,.16);--line-strong:rgba(139,146,156,.32)}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:radial-gradient(120% 80% at 50% -10%,#1a1d24 0%,#0a0b0e 60%) fixed,#0a0b0e;
+ color:var(--white);font-family:"Mont",system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+ padding:clamp(14px,4vw,56px) 0 64px}
 .stack{display:flex;flex-direction:column;align-items:center;gap:clamp(18px,3.4vw,40px)}
-
-/* ---------------- LEAF (a page) ---------------- */
-.leaf{
-  position:relative; overflow:hidden;
-  width:min(820px,94vw); aspect-ratio:210/297;
-  container-type:size;
-  background:linear-gradient(160deg,#14161B 0%,#0c0d11 62%,#08090B 100%);
-  color:var(--white);
-  box-shadow:0 40px 80px -30px rgba(0,0,0,.85), 0 2px 0 rgba(255,255,255,.03) inset;
-  padding:9cqw 8.4cqw;
-  display:flex; flex-direction:column;
-}
-.leaf::before{ /* blueprint grid ambience */
-  content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
-  background:
-    linear-gradient(var(--line) 1px,transparent 1px) 0 0/100% 5.2cqw,
-    linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/5.2cqw 100%;
-  -webkit-mask-image:linear-gradient(#000,#000);
-}
+.leaf{position:relative;overflow:hidden;width:min(820px,94vw);aspect-ratio:210/297;container-type:size;
+ background:linear-gradient(160deg,#14161B 0%,#0c0d11 62%,#08090B 100%);color:var(--white);
+ box-shadow:0 40px 80px -30px rgba(0,0,0,.85),0 2px 0 rgba(255,255,255,.03) inset;
+ padding:9cqw 8.4cqw;display:flex;flex-direction:column}
+.leaf::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+ background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/100% 5.2cqw,
+ linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/5.2cqw 100%}
 .leaf>*{position:relative;z-index:2}
-
-/* crop marks */
 .crop{position:absolute;inset:0;z-index:3;pointer-events:none}
 .crop::before,.crop::after{content:"";position:absolute;width:3.4cqw;height:3.4cqw}
 .crop::before{top:3cqw;left:3cqw;border-top:1px solid var(--steel-dim);border-left:1px solid var(--steel-dim)}
 .crop::after{bottom:3cqw;right:3cqw;border-bottom:1px solid var(--steel-dim);border-right:1px solid var(--steel-dim)}
-
-/* ---------------- shared type ---------------- */
-.eyebrow,.kick,.side-label,.docmeta,.sez,.cfk,.sk,.nl,.el,.prest-lbl{
-  font-family:"Mont",sans-serif;font-weight:600;text-transform:uppercase;
-  letter-spacing:.24em;color:var(--steel);
-}
-h1,h2,h3,.bignum,.htitle,.ptitle{
-  font-family:"Anton","Mont",sans-serif;font-weight:400;
-  text-transform:uppercase;line-height:.92;text-wrap:balance;
-  letter-spacing:.005em;
-}
-.body{font-size:2.35cqw;line-height:1.62;color:#C6CCD4;font-weight:400}
-.body p{margin:0 0 1.5cqw}
-.body strong{color:var(--white);font-weight:600}
+.eyebrow,.kick,.side-label,.docmeta,.sez,.cfk,.sk,.nl,.el,.prest-lbl,.zl,.pjt,.pjd{
+ font-family:"Mont";font-weight:600;text-transform:uppercase;letter-spacing:.24em;color:var(--steel)}
+h1,h2,h3,.bignum,.htitle,.ptitle{font-family:"Anton","Mont",sans-serif;font-weight:400;text-transform:uppercase;
+ line-height:.92;text-wrap:balance;letter-spacing:.005em}
+.body{font-size:2.3cqw;line-height:1.6;color:#C6CCD4}
+.body p{margin:0 0 1.5cqw}.body strong{color:var(--white);font-weight:600}
 .body em{font-style:normal;color:var(--red-ink);font-weight:600}
-
-/* ---------------- page header + rail ---------------- */
-.rail{position:absolute;top:0;right:0;height:100%;width:8.4cqw;z-index:4;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  gap:1.4cqw;padding-top:9cqw;border-left:1px solid var(--line)}
+.rail{position:absolute;top:0;right:0;height:100%;width:8.4cqw;z-index:4;display:flex;flex-direction:column;
+ align-items:center;gap:1.4cqw;padding-top:9cqw;border-left:1px solid var(--line)}
 .rail .sez{writing-mode:vertical-rl;font-size:1.5cqw;letter-spacing:.5em}
-.rail .sezn{font-family:"Anton",sans-serif;color:var(--red);font-size:5cqw;line-height:1}
-.phead{margin-bottom:3.4cqw}
+.rail .sezn{font-family:"Anton";color:var(--red);font-size:4.4cqw;line-height:1;text-align:center}
+.phead{margin-bottom:3.2cqw}
 .kick{font-size:1.85cqw;display:block;margin-bottom:2cqw}
-.kick::before{content:"";display:inline-block;width:4cqw;height:2px;background:var(--red);
-  vertical-align:middle;margin-right:1.4cqw;transform:translateY(-.3cqw)}
-.ptitle{font-size:8.6cqw;color:var(--white)}
-.ptitle br{line-height:.9}
-
-/* ---------------- COVER ---------------- */
+.kick::before{content:"";display:inline-block;width:4cqw;height:2px;background:var(--red);vertical-align:middle;margin-right:1.4cqw;transform:translateY(-.3cqw)}
+.ptitle{font-size:7.6cqw;color:var(--white)}
+.intro{font-size:2.55cqw;line-height:1.5;color:#DFE3E9;max-width:64cqw;margin-bottom:3.4cqw}
+blockquote{margin:2.6cqw 0 0;padding-left:3cqw;border-left:3px solid var(--red);font-weight:600;font-size:2.3cqw;line-height:1.4;color:var(--white)}
+.side-label{display:block;font-size:1.7cqw;padding-bottom:1.5cqw;margin-bottom:2cqw;border-bottom:1px solid var(--line-strong);color:var(--red-ink)}
+.prest-lbl{margin-top:1cqw}
+/* cover */
 .cover{padding:0;justify-content:space-between}
 .cover-red{position:absolute;z-index:1;right:-14%;bottom:-16%;width:96%;height:80%;
-  background:linear-gradient(135deg,var(--fill1) 0%,var(--fill2) 100%);
-  transform:skewX(-14deg);transform-origin:bottom right;
-  box-shadow:-20px 0 60px -20px rgba(30,158,67,.45)}
+ background:linear-gradient(135deg,var(--fill1),var(--fill2));transform:skewX(-14deg);transform-origin:bottom right;
+ box-shadow:-20px 0 60px -20px rgba(30,158,67,.45)}
 .bpwrap{position:absolute;color:#fff;opacity:.16;pointer-events:none}
-.cover-red .bpwrap{right:6%;bottom:8%;width:62cqw;transform:skewX(14deg)}
+.cover-red .bpwrap{right:6%;bottom:8%;width:60cqw;transform:skewX(14deg)}
 .bp{width:100%;height:auto;display:block}
-.cover-top{display:flex;justify-content:space-between;align-items:flex-start;
-  padding:8cqw 8cqw 0}
-.docmeta{display:flex;flex-direction:column;align-items:flex-end;gap:.7cqw;
-  font-size:1.55cqw;letter-spacing:.18em;text-align:right}
-.cover-hero{padding:0 8cqw;margin-top:auto;margin-bottom:2cqw;position:relative;z-index:3}
-.eyebrow{font-size:2cqw;display:block;margin-bottom:3cqw;color:var(--steel)}
-.htitle{font-size:18cqw;color:var(--white);letter-spacing:.004em}
-.htitle .hy{color:var(--red);-webkit-text-fill-color:var(--red)}
-.htitle.sm{font-size:13cqw}
-.lead{font-family:"Mont";font-weight:500;font-size:2.7cqw;line-height:1.4;
-  color:#E7EAEF;max-width:44cqw;margin:4cqw 0 0}
-.cover-foot{display:grid;grid-template-columns:repeat(4,1fr);
-  border-top:1px solid var(--line-strong);background:rgba(9,10,13,.6);
-  backdrop-filter:blur(2px);position:relative;z-index:3}
-.cf{padding:3.4cqw 2.4cqw;border-right:1px solid var(--line);display:flex;
-  flex-direction:column;gap:1cqw}
-.cf:last-child{border-right:0}
-.cfk{font-size:1.5cqw;letter-spacing:.2em}
-.cfv{font-family:"Mont";font-weight:600;font-size:2cqw;color:var(--white)}
-.cf.web .cfv{color:var(--red-ink)}
-
-/* ---------------- LOGO ---------------- */
+.cover-top{display:flex;justify-content:space-between;align-items:flex-start;padding:8cqw 8cqw 0}
+.docmeta{display:flex;flex-direction:column;align-items:flex-end;gap:.7cqw;font-size:1.5cqw;letter-spacing:.18em;text-align:right}
+.cover-hero{padding:0 8cqw;margin-top:auto;margin-bottom:2cqw;z-index:3}
+.eyebrow{font-size:1.95cqw;display:block;margin-bottom:3cqw;color:var(--steel)}
+.htitle{font-size:15cqw;color:var(--white)}.htitle .hg{color:var(--red);-webkit-text-fill-color:var(--red)}
+.htitle.sm{font-size:11cqw}
+.lead{font-weight:500;font-size:2.5cqw;line-height:1.4;color:#E7EAEF;max-width:52cqw;margin:3.4cqw 0 0}
+.lead2{font-weight:500;font-size:2.2cqw;line-height:1.4;color:#E7EAEF;max-width:52cqw;margin:2.6cqw 0 0}
+.cover-foot{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line-strong);background:rgba(8,9,11,.6);z-index:3}
+.cf{padding:3.2cqw 2.2cqw;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:1cqw}
+.cf:last-child{border-right:0}.cfk{font-size:1.45cqw;letter-spacing:.2em}
+.cfv{font-weight:600;font-size:1.95cqw;color:var(--white)}.cf.web .cfv{color:var(--red-ink)}
 .logo-img{width:40cqw;height:auto;display:block;filter:drop-shadow(0 3px 10px rgba(0,0,0,.5))}
 .cover-top .logo-img,.back-top .logo-img{width:44cqw}
-
-/* ---------------- body columns ---------------- */
-.two-col{display:grid;grid-template-columns:1.55fr 1fr;gap:6cqw;align-items:start}
+/* TOC */
+.toc{display:flex;flex-direction:column;border-top:1px solid var(--line-strong)}
+.trow{display:grid;grid-template-columns:auto 1fr auto;align-items:baseline;gap:3cqw;padding:2.15cqw 0;border-bottom:1px solid var(--line)}
+.tn{font-family:"Anton";color:var(--red);font-size:3cqw;line-height:1}
+.tt{font-family:"Anton";text-transform:uppercase;color:var(--white);font-size:3.2cqw;line-height:1}
+.td{font-size:1.75cqw;color:var(--steel);text-align:right;max-width:34cqw}
+/* two-col */
+.two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:5.5cqw;align-items:start}
 .two-col.wide{grid-template-columns:1fr 1fr}
-.intro{font-size:2.7cqw;line-height:1.5;color:#E7EAEF;max-width:62cqw;margin-bottom:4cqw}
-blockquote{margin:3cqw 0 0;padding-left:3cqw;border-left:3px solid var(--red);
-  font-family:"Mont";font-weight:600;font-size:2.5cqw;line-height:1.4;color:var(--white)}
-.side-label{display:block;font-size:1.7cqw;padding-bottom:1.6cqw;margin-bottom:2cqw;
-  border-bottom:1px solid var(--line-strong);color:var(--red-ink)}
-
-/* dati / quals / contacts definition rows */
-.dati,.quals,.contacts{margin:0;display:flex;flex-direction:column}
-.drow,.qrow,.crow{display:flex;flex-direction:column;gap:.5cqw;padding:1.7cqw 0;
-  border-bottom:1px solid var(--line)}
-.drow dt,.qrow dt,.crow dt{font-size:1.5cqw;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--steel);font-weight:600}
-.drow dd,.qrow dd,.crow dd{margin:0;font-family:"Mont";font-weight:500;
-  font-size:2cqw;line-height:1.35;color:var(--white)}
-.qrow dd{font-weight:400;color:#D5D9E0}
-
-/* azienda page — denser to fit portrait height */
-.azienda .ptitle{font-size:7.2cqw}
-.azienda .phead{margin-bottom:2.6cqw}
-.azienda .body{font-size:2.12cqw;line-height:1.5}
-.azienda .body p{margin-bottom:1.15cqw}
-.azienda blockquote{font-size:2.15cqw;margin-top:2.2cqw}
-.azienda .two-col{gap:5cqw}
-.azienda .drow,.azienda .qrow{padding:1.35cqw 0}
-.azienda .drow dd{font-size:1.9cqw}
-
-/* stat band */
-.statband{margin-top:auto;display:grid;grid-template-columns:repeat(4,1fr);
-  border-top:1px solid var(--line-strong)}
-.stat{padding:3.2cqw 1cqw 0;display:flex;flex-direction:column;gap:.8cqw;
-  border-right:1px solid var(--line)}
+.azienda .ptitle{font-size:6.6cqw}.azienda .body{font-size:2.12cqw;line-height:1.5}
+.azienda .body p{margin-bottom:1.2cqw}.azienda blockquote{font-size:2.05cqw}
+.dati,.quals{display:flex;flex-direction:column;margin:0}
+.drow,.qrow,.crow2{display:flex;flex-direction:column;gap:.5cqw;padding:1.35cqw 0;border-bottom:1px solid var(--line)}
+.drow dt,.crow2 dt{font-size:1.45cqw;letter-spacing:.18em;text-transform:uppercase;color:var(--steel);font-weight:600}
+.drow dd,.crow2 dd{margin:0;font-weight:500;font-size:1.85cqw;line-height:1.3;color:var(--white)}
+.crow2 dd{font-weight:400;color:#C6CCD4}
+.quals{gap:0}
+/* timeline */
+.timeline{position:relative;margin-top:1cqw;padding-left:6cqw}
+.timeline::before{content:"";position:absolute;left:1.4cqw;top:1cqw;bottom:2cqw;width:2px;background:linear-gradient(var(--red),var(--red-deep))}
+.tli{position:relative;margin-bottom:4.4cqw}
+.tli::before{content:"";position:absolute;left:-5.4cqw;top:.4cqw;width:2.8cqw;height:2.8cqw;border-radius:50%;background:var(--ink);border:2px solid var(--red);box-shadow:0 0 12px rgba(48,209,88,.5)}
+.tli .ty{font-family:"Anton";color:var(--red);font-size:3.4cqw;display:block;margin-bottom:.8cqw}
+.tli h3{font-size:3cqw;color:var(--white);margin:0 0 1.2cqw}
+.tli p{margin:0;font-size:2.05cqw;line-height:1.5;color:#C6CCD4;max-width:62cqw}
+/* value cards */
+.vgrid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line-strong);border-left:1px solid var(--line-strong)}
+.vcard{padding:2.9cqw 3cqw;border-right:1px solid var(--line-strong);border-bottom:1px solid var(--line-strong);min-height:19cqw}
+.vcard .vn{font-family:"Anton";font-size:3cqw;color:var(--red);display:block;margin-bottom:1cqw}
+.vcard h3{font-size:2.55cqw;color:var(--white);margin:0 0 1.2cqw;line-height:1.02}
+.vcard p{margin:0;font-size:1.8cqw;line-height:1.45;color:#C4C9D3}
+.statband{margin-top:auto;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line-strong)}
+.stat{padding:3cqw 1cqw 0;display:flex;flex-direction:column;gap:.7cqw;border-right:1px solid var(--line)}
 .stat:last-child{border-right:0}
-.sv{font-family:"Anton",sans-serif;font-size:7.4cqw;color:var(--red);line-height:.9}
-.sk{font-size:1.5cqw;letter-spacing:.16em}
-
-/* ---------------- value cards (02) ---------------- */
-.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:0;
-  border-top:1px solid var(--line-strong);border-left:1px solid var(--line-strong)}
-.vcard{padding:3.6cqw 3.4cqw;border-right:1px solid var(--line-strong);
-  border-bottom:1px solid var(--line-strong);position:relative;min-height:24cqw}
-.vcard .vn{font-family:"Anton",sans-serif;font-size:3.4cqw;color:var(--red);
-  display:block;margin-bottom:1.4cqw}
-.vcard h3{font-size:3cqw;color:var(--white);margin:0 0 1.6cqw;line-height:1}
-.vcard p{margin:0;font-size:1.95cqw;line-height:1.5;color:#C9CED7}
-
-/* ---------------- services index (03) ---------------- */
+.sv{font-family:"Anton";font-size:6.4cqw;color:var(--red);line-height:.9}.sk{font-size:1.4cqw;letter-spacing:.14em}
+/* method */
+.method{display:grid;grid-template-columns:1fr 1fr;gap:3cqw;margin-top:1cqw}
+.mstep{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--red);padding:3cqw 3.2cqw}
+.mn{font-family:"Anton";color:var(--red);font-size:3.4cqw;display:block;margin-bottom:1cqw}
+.mstep h3{font-size:2.7cqw;color:var(--white);margin:0 0 1.2cqw}
+.mstep p{margin:0;font-size:1.95cqw;line-height:1.45;color:#C6CCD4}
+.tline{margin-top:3.4cqw;display:flex;flex-direction:column;gap:.8cqw;border-top:1px solid var(--line-strong);padding-top:2.4cqw}
+.tline span{font-size:1.6cqw;letter-spacing:.22em;text-transform:uppercase;color:var(--red-ink);font-weight:600}
+.tline b{font-family:"Anton";font-weight:400;text-transform:uppercase;font-size:3.6cqw;color:var(--white)}
+/* services index */
 .servindex{display:flex;flex-direction:column;border-top:1px solid var(--line-strong)}
-.sidx{display:grid;grid-template-columns:auto 1fr auto;align-items:center;
-  gap:3.4cqw;padding:3.4cqw 0;border-bottom:1px solid var(--line);
-  transition:padding .25s ease}
-.sidn{font-family:"Anton",sans-serif;font-size:6cqw;color:var(--red);line-height:.8}
-.sidt{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:4cqw;
-  color:var(--white);line-height:1}
-.sidd{font-size:1.85cqw;color:var(--steel);max-width:30cqw;text-align:right;line-height:1.35}
-
-/* ---------------- service detail ---------------- */
+.sidx{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:3.4cqw;padding:3.2cqw 0;border-bottom:1px solid var(--line)}
+.sidn{font-family:"Anton";font-size:5.4cqw;color:var(--red);line-height:.8}
+.sidt{font-family:"Anton";text-transform:uppercase;font-size:3.6cqw;color:var(--white);line-height:1}
+.sidd{font-size:1.75cqw;color:var(--steel);max-width:30cqw;text-align:right;line-height:1.35}
+/* service detail */
 .service{overflow:hidden}
-.bignum{position:absolute;z-index:1;top:3cqw;right:6cqw;
-  font-family:"Anton",sans-serif;font-size:34cqw;line-height:1;
-  color:rgba(48,209,88,.10);letter-spacing:-.02em;pointer-events:none}
-.prest-lbl{margin-top:1cqw}
+.bignum{position:absolute;z-index:1;top:3cqw;right:6cqw;font-family:"Anton";font-size:30cqw;line-height:1;color:rgba(48,209,88,.09);pointer-events:none}
 .prest{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.prest li{display:grid;grid-template-columns:1fr;gap:.7cqw;padding:2.2cqw 0;
-  border-bottom:1px solid var(--line)}
-.prest .pt{font-family:"Mont";font-weight:700;font-size:2.35cqw;color:var(--white);
-  display:flex;align-items:baseline;gap:1.6cqw}
-.prest .pt::before{content:"";width:1.8cqw;height:1.8cqw;flex:none;
-  background:var(--red);transform:rotate(45deg);translate:0 -.1cqw}
-.prest .pd{font-size:2cqw;line-height:1.45;color:#C4C9D3;padding-left:3.4cqw}
-.nota{margin-top:auto;background:var(--panel-2);border-left:3px solid var(--red);
-  padding:2.8cqw 3cqw;display:flex;flex-direction:column;gap:1.2cqw}
-.nota .nl{font-size:1.55cqw}
-.nota p{margin:0;font-size:2cqw;line-height:1.45;color:#D5D9E0}
-
-/* emergency block (3.5) */
-.emerg{display:flex;flex-direction:column;gap:1cqw;
-  background:linear-gradient(135deg,var(--red) 0%,#26BE4C 100%);
-  color:var(--ink);padding:3cqw 3.4cqw;margin:0 0 4cqw}
-.emerg .el{color:rgba(8,9,11,.72);font-size:1.6cqw}
-.emerg .enum{font-family:"Anton",sans-serif;font-size:8cqw;line-height:.9;color:var(--ink);
-  letter-spacing:.01em}
-.emerg .ed{font-family:"Mont";font-weight:600;font-size:1.8cqw;color:rgba(8,9,11,.85)}
-
-/* collaborazione footnote */
-.foot-note{margin-top:auto;font-size:1.7cqw;line-height:1.5;color:var(--steel);
-  border-top:1px solid var(--line);padding-top:2.4cqw}
-
-/* ---------------- BACK ---------------- */
+.prest li{padding:1.6cqw 0;border-bottom:1px solid var(--line)}
+.prest .pt{font-weight:700;font-size:2.15cqw;color:var(--white);display:flex;align-items:baseline;gap:1.6cqw}
+.prest .pt::before{content:"";width:1.7cqw;height:1.7cqw;flex:none;background:var(--red);transform:rotate(45deg);translate:0 -.05cqw}
+.prest .pd{display:block;font-size:1.85cqw;line-height:1.4;color:#C4C9D3;padding-left:3.3cqw;margin-top:.5cqw}
+.norme{display:grid;grid-template-columns:1fr 1fr;gap:1.6cqw}
+.nb{background:var(--panel);border:1px solid var(--line);padding:1.8cqw 2cqw;display:flex;flex-direction:column;gap:.6cqw}
+.nb .nk{font-size:1.55cqw;letter-spacing:.12em;text-transform:uppercase;color:var(--red-ink);font-weight:700}
+.nb .nv{font-size:1.8cqw;line-height:1.35;color:#C6CCD4}
+.nota{margin-top:auto;background:var(--panel-2);border-left:3px solid var(--red);padding:2.6cqw 3cqw;display:flex;flex-direction:column;gap:1cqw}
+.nota .nl{font-size:1.5cqw}.nota p{margin:0;font-size:1.9cqw;line-height:1.42;color:#D5D9E0}
+.emerg{display:flex;flex-direction:column;gap:.9cqw;background:linear-gradient(135deg,var(--red),#26BE4C);color:var(--ink);padding:2.8cqw 3.2cqw;margin:0 0 3cqw}
+.emerg .el{color:rgba(8,9,11,.72);font-size:1.5cqw}
+.emerg .enum{font-family:"Anton";font-size:7cqw;line-height:.9;color:var(--ink)}
+.emerg .ed{font-weight:600;font-size:1.7cqw;color:rgba(8,9,11,.85)}
+/* sectors */
+.sectors{display:grid;grid-template-columns:1fr 1fr;gap:2.4cqw}
+.sect{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--red);padding:2.6cqw 2.8cqw}
+.sect h3{font-size:2.5cqw;color:var(--white);margin:0 0 1cqw;line-height:1.02}
+.sect p{margin:0;font-size:1.78cqw;line-height:1.4;color:#C4C9D3}
+/* projects */
+.projects{display:grid;grid-template-columns:1fr 1fr;gap:2.6cqw}
+.proj{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:2.6cqw 2.8cqw;display:flex;flex-direction:column;gap:1cqw}
+.pjh{display:flex;justify-content:space-between;align-items:center}
+.pjt{font-size:1.4cqw;color:var(--red-ink);border:1px solid var(--red-deep);border-radius:999px;padding:.5cqw 1.4cqw;letter-spacing:.14em}
+.pjd{font-size:1.5cqw;letter-spacing:.1em;color:var(--steel)}
+.proj h3{font-family:"Anton";text-transform:uppercase;font-size:3.4cqw;color:var(--white);margin:.4cqw 0 0}
+.pjl{font-size:1.7cqw;color:var(--red-ink);font-weight:600}
+.proj p{margin:.4cqw 0 0;font-size:1.85cqw;line-height:1.4;color:#C4C9D3}
+/* zones */
+.zone{margin-top:2.6cqw}.zl{display:block;font-size:1.7cqw;color:var(--red-ink);margin-bottom:1.6cqw}
+.chips{display:flex;flex-wrap:wrap;gap:1.4cqw}
+.chip{font-size:1.85cqw;font-weight:500;color:#DCE0E6;background:var(--panel);border:1px solid var(--line);padding:1.1cqw 1.8cqw;border-radius:2px}
+.chips.en{gap:1.4cqw}.chip.mono{display:flex;flex-direction:column;gap:.3cqw;font-family:"Anton";letter-spacing:.02em;color:var(--white);font-size:2cqw}
+.chip.mono i{font-family:"Mont";font-style:normal;font-weight:600;font-size:1.35cqw;color:var(--steel);text-transform:uppercase;letter-spacing:.1em}
+.foot-note{margin-top:2.6cqw;font-size:1.55cqw;line-height:1.5;color:var(--steel)}
+/* glossary */
+.glossary{display:grid;grid-template-columns:1fr 1fr;gap:2.2cqw 4cqw}
+.gitem h3{font-size:2.15cqw;color:var(--white);margin:0 0 .8cqw;line-height:1.05}
+.gitem p{margin:0;font-size:1.72cqw;line-height:1.4;color:#C4C9D3}
+/* faq */
+.faqs{display:flex;flex-direction:column}
+.faq{padding:2.4cqw 0;border-bottom:1px solid var(--line)}
+.faq h3{font-size:2.5cqw;color:var(--white);margin:0 0 1cqw;display:flex;gap:1.6cqw}
+.faq h3::before{content:"?";font-family:"Anton";color:var(--red);font-size:2.5cqw;line-height:.9}
+.faq p{margin:0;font-size:1.95cqw;line-height:1.45;color:#C6CCD4;padding-left:4.1cqw}
+/* back */
 .back{padding:0;justify-content:flex-start}
-.back-red{position:absolute;z-index:1;right:-20%;left:auto;top:-24%;width:66%;height:48%;
-  background:linear-gradient(150deg,var(--fill1) 0%,var(--fill2) 100%);
-  transform:skewX(-14deg)}
+.back-red{position:absolute;z-index:1;right:-20%;left:auto;top:-24%;width:66%;height:48%;background:linear-gradient(150deg,var(--fill1),var(--fill2));transform:skewX(-14deg)}
 .back-red .bpwrap{right:4%;top:14%;left:auto;width:42cqw;transform:skewX(14deg)}
-.back-top{display:flex;justify-content:space-between;align-items:flex-start;
-  padding:8cqw 8cqw 0;position:relative;z-index:3}
-.back-hero{padding:0 8cqw;margin-top:8cqw;position:relative;z-index:3}
-.back-hero .eyebrow{color:var(--red);opacity:1}
+.back-top{display:flex;justify-content:space-between;align-items:flex-start;padding:8cqw 8cqw 0;z-index:3}
 .back .docmeta{color:#F3F5F8}
-.back .htitle.sm{font-size:14cqw;margin-top:2cqw}
-.contacts{margin-top:auto;padding:0 8cqw;display:grid;grid-template-columns:1fr 1fr;
-  column-gap:6cqw;position:relative;z-index:3}
-.back-foot{margin-top:5cqw;padding:3cqw 8cqw;display:flex;justify-content:space-between;
-  border-top:1px solid var(--line-strong);font-size:1.55cqw;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--steel);position:relative;z-index:3}
-
-/* ---------------- hover (screen only) ---------------- */
-@media(hover:hover){
-  .sidx:hover{padding-left:2cqw}
-  .vcard:hover{background:var(--panel-2)}
-}
-
-/* ---------------- PRINT ---------------- */
+.back-hero{padding:0 8cqw;margin-top:7cqw;z-index:3}
+.back-hero .eyebrow{color:var(--red)}
+.back .htitle.sm{font-size:11cqw;margin-top:2cqw}
+.contacts{margin-top:auto;padding:0 8cqw;display:grid;grid-template-columns:1fr 1fr;column-gap:6cqw;z-index:3}
+.crow{display:flex;flex-direction:column;gap:.4cqw;padding:1.5cqw 0;border-bottom:1px solid var(--line)}
+.crow dt{font-size:1.4cqw;letter-spacing:.18em;text-transform:uppercase;color:var(--steel);font-weight:600}
+.crow dd{margin:0;font-weight:500;font-size:1.95cqw;color:var(--white)}
+.back-foot{margin-top:4cqw;padding:3cqw 8cqw;display:flex;justify-content:space-between;border-top:1px solid var(--line-strong);font-size:1.45cqw;letter-spacing:.12em;text-transform:uppercase;color:var(--steel);z-index:3}
+@media(hover:hover){.sidx:hover{padding-left:2cqw}.vcard:hover,.sect:hover,.proj:hover{background:var(--panel-2)}}
 @page{size:A4;margin:0}
-@media print{
-  body{background:#fff;padding:0}
-  .stack{gap:0}
-  .leaf{width:210mm;height:297mm;box-shadow:none;break-after:page;page-break-after:always}
-  .leaf:last-child{break-after:auto}
-  .crop{display:none}
-}
+@media print{body{background:#fff;padding:0}.stack{gap:0}.leaf{width:210mm;height:297mm;box-shadow:none;break-after:page;page-break-after:always}.leaf:last-child{break-after:auto}.crop{display:none}}
 """
-
-FONTS = f"""
-@font-face{{font-family:"Anton";font-style:normal;font-weight:400;font-display:swap;
-  src:url(data:font/woff2;base64,{ANTON}) format("woff2");}}
-@font-face{{font-family:"Mont";font-style:normal;font-weight:300 800;font-display:swap;
-  src:url(data:font/woff2;base64,{MONT}) format("woff2");}}
-"""
-
-HTML = f"""<title>KRECA — Profilo Aziendale</title>
+FONTS=(f'@font-face{{font-family:"Anton";font-weight:400;font-display:swap;src:url(data:font/woff2;base64,{ANTON}) format("woff2")}}'
+       f'@font-face{{font-family:"Mont";font-weight:300 800;font-display:swap;src:url(data:font/woff2;base64,{MONT}) format("woff2")}}')
+HTML=f"""<title>KRECA — Profilo Aziendale</title>
 <style>{FONTS}{CSS}</style>
 <main class="stack">
 {BOOK}
 </main>"""
-
-out = os.path.join(SCR, "index.html")
-open(out, "w").write(HTML)
-print("wrote", out, len(HTML), "bytes")
+out=os.path.join(SCR,"index.html"); open(out,"w").write(HTML)
+print("wrote",out,round(len(HTML)/1024),"KB ·",len(pages),"pagine")

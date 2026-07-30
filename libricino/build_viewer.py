@@ -5,6 +5,11 @@ SCR = os.path.dirname(os.path.abspath(__file__))
 exec(open(os.path.join(SCR, "pages_b64.py")).read())   # defines PAGES (list of b64 jpg)
 
 pages_js = "[" + ",".join('"data:image/jpeg;base64,%s"' % b for b in PAGES) + "]"
+TITLES = ["Copertina","Indice","Chi siamo","La nostra storia","Perche KRECA","Il metodo",
+ "Aree di servizio","Costruzioni metalliche","Chiusure & sicurezza","Facility & logistica",
+ "Pronto intervento H24","Settori serviti","Lavori recenti","Zone servite","Certificazioni",
+ "Glossario tecnico","Domande frequenti","Contatti"]
+titles_js = "[" + ",".join('"%s"' % t for t in TITLES[:len(PAGES)]) + "]"
 
 TEMPLATE = r"""<title>KRECA — Libricino · Anteprima sfogliabile</title>
 <style>
@@ -154,14 +159,16 @@ body{background:radial-gradient(120% 90% at 50% -10%,#1a1d24 0%,#070809 62%,#050
 
 <script>
 const PAGES = /*PAGES*/;
-const SPREADS = [
-  {L:null, R:0, cap:"Copertina"},
-  {L:1, R:2, cap:"L'azienda · Perché KRECA"},
-  {L:3, R:4, cap:"Aree di servizio · Costruzioni in ferro"},
-  {L:5, R:6, cap:"Serramenti e infissi · Chiusure e sicurezza"},
-  {L:7, R:8, cap:"Manutenzione tecnica · Pronto intervento"},
-  {L:9, R:10, cap:"Collaborazione e qualifiche · Contatti"},
-];
+const TITLES = /*TITLES*/;
+// Build spreads: closed cover alone, then two-page spreads, back cover alone if leftover.
+const SPREADS = [];
+(function(){
+  const cap = (l,r)=> l==null ? TITLES[r] : (TITLES[l]+" · "+TITLES[r]);
+  SPREADS.push({L:null,R:0,cap:cap(null,0)});
+  let i=1;
+  for(; i+1 < PAGES.length; i+=2) SPREADS.push({L:i,R:i+1,cap:cap(i,i+1)});
+  if(i < PAGES.length) SPREADS.push({L:PAGES.length-1,R:null,cap:TITLES[PAGES.length-1]});
+})();
 let s = 0, busy = false;
 const $ = id => document.getElementById(id);
 const halfL=$("halfL"), halfR=$("halfR"), leaf=$("leaf"),
@@ -264,5 +271,5 @@ render();
 """
 
 out = os.path.join(SCR, "viewer.html")
-open(out, "w").write(TEMPLATE.replace("/*PAGES*/", pages_js))
+open(out, "w").write(TEMPLATE.replace("/*PAGES*/", pages_js).replace("/*TITLES*/", titles_js))
 print("wrote", out, round(len(open(out).read())/1024), "KB")
